@@ -1,4 +1,2 @@
-bump2version
-black
+bump-my-version
 pre-commit
-pylint
