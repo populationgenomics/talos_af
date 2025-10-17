@@ -1,0 +1,676 @@
+{
+    "ENSG00000101986": {
+        "gene": "ABCD1",
+        "moi": "XL",
+        "gene_id": "ENSG00000101986",
+        "nm_id": "NM_000033",
+        "enst": "ENST00000218104",
+        "reportable": "all"
+    },
+    "ENSG00000107796": {
+        "gene": "ACTA2",
+        "moi": "AD",
+        "gene_id": "ENSG00000107796",
+        "nm_id": "NM_001613",
+        "enst": "ENST00000224784",
+        "reportable": "all"
+    },
+    "ENSG00000159251": {
+        "gene": "ACTC1",
+        "moi": "AD",
+        "gene_id": "ENSG00000159251",
+        "nm_id": "NM_005159",
+        "enst": "ENST00000290378",
+        "reportable": "all"
+    },
+    "ENSG00000139567": {
+        "gene": "ACVRL1",
+        "moi": "AD",
+        "gene_id": "ENSG00000139567",
+        "nm_id": "NM_000020",
+        "enst": "ENST00000388922",
+        "reportable": "all"
+    },
+    "ENSG00000134982": {
+        "gene": "APC",
+        "moi": "AD ",
+        "gene_id": "ENSG00000134982",
+        "nm_id": "NM_000038",
+        "enst": "ENST00000257430",
+        "reportable": "all"
+    },
+    "ENSG00000084674": {
+        "gene": "APOB",
+        "moi": "AD",
+        "gene_id": "ENSG00000084674",
+        "nm_id": "NM_000384",
+        "enst": "ENST00000233242",
+        "reportable": "all"
+    },
+    "ENSG00000123191": {
+        "gene": "ATP7B",
+        "moi": "AR",
+        "gene_id": "ENSG00000123191",
+        "nm_id": "NM_000053",
+        "enst": "ENST00000242839",
+        "reportable": "all"
+    },
+    "ENSG00000151929": {
+        "gene": "BAG3",
+        "moi": "AD",
+        "gene_id": "ENSG00000151929",
+        "nm_id": "NM_004281",
+        "enst": "ENST00000369085",
+        "reportable": "all"
+    },
+    "ENSG00000107779": {
+        "gene": "BMPR1A",
+        "moi": "AD",
+        "gene_id": "ENSG00000107779",
+        "nm_id": "NM_004329",
+        "enst": "ENST00000372037",
+        "reportable": "all"
+    },
+    "ENSG00000012048": {
+        "gene": "BRCA1",
+        "moi": "AD",
+        "gene_id": "ENSG00000012048",
+        "nm_id": "NM_007294",
+        "enst": "ENST00000357654",
+        "reportable": "all"
+    },
+    "ENSG00000139618": {
+        "gene": "BRCA2",
+        "moi": "AD",
+        "gene_id": "ENSG00000139618",
+        "nm_id": "NM_000059",
+        "enst": "ENST00000380152",
+        "reportable": "all"
+    },
+    "ENSG00000169814": {
+        "gene": "BTD",
+        "moi": "AR",
+        "gene_id": "ENSG00000169814",
+        "nm_id": "NM_001370658",
+        "enst": "ENST00000643237",
+        "reportable": "all"
+    },
+    "ENSG00000081248": {
+        "gene": "CACNA1S",
+        "moi": "AD",
+        "gene_id": "ENSG00000081248",
+        "nm_id": "NM_000069",
+        "enst": "ENST00000362061",
+        "reportable": "all"
+    },
+    "ENSG00000198668": {
+        "gene": "CALM1",
+        "moi": "AD",
+        "gene_id": "ENSG00000198668",
+        "nm_id": "NM_006888",
+        "enst": "ENST00000356978",
+        "reportable": "all"
+    },
+    "ENSG00000143933": {
+        "gene": "CALM2",
+        "moi": "AD",
+        "gene_id": "ENSG00000143933",
+        "nm_id": "NM_001743",
+        "enst": "ENST00000272298",
+        "reportable": "all"
+    },
+    "ENSG00000160014": {
+        "gene": "CALM3",
+        "moi": "AD",
+        "gene_id": "ENSG00000160014",
+        "nm_id": "NM_005184",
+        "enst": "ENST00000291295",
+        "reportable": "all"
+    },
+    "ENSG00000118729": {
+        "gene": "CASQ2",
+        "moi": "AR",
+        "gene_id": "ENSG00000118729",
+        "nm_id": "NM_001232",
+        "enst": "ENST00000261448",
+        "reportable": "all"
+    },
+    "ENSG00000168542": {
+        "gene": "COL3A1",
+        "moi": "AD",
+        "gene_id": "ENSG00000168542",
+        "nm_id": "NM_000090",
+        "enst": "ENST00000304636",
+        "reportable": "all"
+    },
+    "ENSG00000135929": {
+        "gene": "CYP27A1",
+        "moi": "AR",
+        "gene_id": "ENSG00000135929",
+        "nm_id": "NM_000784",
+        "enst": "ENST00000258415",
+        "reportable": "all"
+    },
+    "ENSG00000175084": {
+        "gene": "DES",
+        "moi": "AD",
+        "gene_id": "ENSG00000175084",
+        "nm_id": "NM_001927",
+        "enst": "ENST00000373960",
+        "reportable": "all"
+    },
+    "ENSG00000134755": {
+        "gene": "DSC2",
+        "moi": "AD",
+        "gene_id": "ENSG00000134755",
+        "nm_id": "NM_024422",
+        "enst": "ENST00000280904",
+        "reportable": "all"
+    },
+    "ENSG00000046604": {
+        "gene": "DSG2",
+        "moi": "AD",
+        "gene_id": "ENSG00000046604",
+        "nm_id": "NM_001943",
+        "enst": "ENST00000261590",
+        "reportable": "all"
+    },
+    "ENSG00000096696": {
+        "gene": "DSP",
+        "moi": "AD",
+        "gene_id": "ENSG00000096696",
+        "nm_id": "NM_004415",
+        "enst": "ENST00000379802",
+        "reportable": "all"
+    },
+    "ENSG00000106991": {
+        "gene": "ENG",
+        "moi": "AD",
+        "gene_id": "ENSG00000106991",
+        "nm_id": "NM_001114753",
+        "enst": "ENST00000373203",
+        "reportable": "all"
+    },
+    "ENSG00000166147": {
+        "gene": "FBN1",
+        "moi": "AD",
+        "gene_id": "ENSG00000166147",
+        "nm_id": "NM_000138",
+        "enst": "ENST00000316623",
+        "reportable": "all"
+    },
+    "ENSG00000128591": {
+        "gene": "FLNC",
+        "moi": "AD",
+        "gene_id": "ENSG00000128591",
+        "nm_id": "NM_001458",
+        "enst": "ENST00000325888",
+        "reportable": "all"
+    },
+    "ENSG00000171298": {
+        "gene": "GAA",
+        "moi": "AR",
+        "gene_id": "ENSG00000171298",
+        "nm_id": "NM_000152",
+        "enst": "ENST00000302262",
+        "reportable": "all"
+    },
+    "ENSG00000102393": {
+        "gene": "GLA",
+        "moi": "XL",
+        "gene_id": "ENSG00000102393",
+        "nm_id": "NM_000169",
+        "enst": "ENST00000218516",
+        "reportable": "all"
+    },
+    "ENSG00000010704": {
+        "gene": "HFE",
+        "moi": "AR",
+        "gene_id": "ENSG00000010704",
+        "nm_id": "NM_000410",
+        "enst": "ENST00000357618",
+        "reportable": "specific",
+        "specific_type": "p.C282Y"
+    },
+    "ENSG00000135100": {
+        "gene": "HNF1A",
+        "moi": "AD",
+        "gene_id": "ENSG00000135100",
+        "nm_id": "NM_000545",
+        "enst": "ENST00000257555",
+        "reportable": "all"
+    },
+    "ENSG00000055118": {
+        "gene": "KCNH2",
+        "moi": "AD",
+        "gene_id": "ENSG00000055118",
+        "nm_id": "NM_000238",
+        "enst": "ENST00000262186",
+        "reportable": "all"
+    },
+    "ENSG00000053918": {
+        "gene": "KCNQ1",
+        "moi": "AD",
+        "gene_id": "ENSG00000053918",
+        "nm_id": "NM_000218",
+        "enst": "ENST00000155840",
+        "reportable": "all"
+    },
+    "ENSG00000130164": {
+        "gene": "LDLR",
+        "moi": "AD",
+        "gene_id": "ENSG00000130164",
+        "nm_id": "NM_000527",
+        "enst": "ENST00000558518",
+        "reportable": "all"
+    },
+    "ENSG00000160789": {
+        "gene": "LMNA",
+        "moi": "AD",
+        "gene_id": "ENSG00000160789",
+        "nm_id": "NM_005572",
+        "enst": "ENST00000677389",
+        "reportable": "all"
+    },
+    "ENSG00000125952": {
+        "gene": "MAX",
+        "moi": "AD",
+        "gene_id": "ENSG00000125952",
+        "nm_id": "NM_002382",
+        "enst": "ENST00000358664",
+        "reportable": "all"
+    },
+    "ENSG00000133895": {
+        "gene": "MEN1",
+        "moi": "AD",
+        "gene_id": "ENSG00000133895",
+        "nm_id": "NM_001370259",
+        "enst": "ENST00000450708",
+        "reportable": "all"
+    },
+    "ENSG00000076242": {
+        "gene": "MLH1",
+        "moi": "AD",
+        "gene_id": "ENSG00000076242",
+        "nm_id": "NM_000249",
+        "enst": "ENST00000231790",
+        "reportable": "all"
+    },
+    "ENSG00000095002": {
+        "gene": "MSH2",
+        "moi": "AD",
+        "gene_id": "ENSG00000095002",
+        "nm_id": "NM_000251",
+        "enst": "ENST00000233146",
+        "reportable": "all"
+    },
+    "ENSG00000116062": {
+        "gene": "MSH6",
+        "moi": "AD",
+        "gene_id": "ENSG00000116062",
+        "nm_id": "NM_000179",
+        "enst": "ENST00000234420",
+        "reportable": "all"
+    },
+    "ENSG00000132781": {
+        "gene": "MUTYH",
+        "moi": "AR",
+        "gene_id": "ENSG00000132781",
+        "nm_id": "NM_001128425",
+        "enst": "ENST00000710952",
+        "reportable": "all"
+    },
+    "ENSG00000134571": {
+        "gene": "MYBPC3",
+        "moi": "AD",
+        "gene_id": "ENSG00000134571",
+        "nm_id": "NM_000256",
+        "enst": "ENST00000545968",
+        "reportable": "all"
+    },
+    "ENSG00000133392": {
+        "gene": "MYH11",
+        "moi": "AD",
+        "gene_id": "ENSG00000133392",
+        "nm_id": "NM_001040113",
+        "enst": "ENST00000452625",
+        "reportable": "all"
+    },
+    "ENSG00000092054": {
+        "gene": "MYH7",
+        "moi": "AD",
+        "gene_id": "ENSG00000092054",
+        "nm_id": "NM_000257",
+        "enst": "ENST00000355349",
+        "reportable": "all"
+    },
+    "ENSG00000111245": {
+        "gene": "MYL2",
+        "moi": "AD",
+        "gene_id": "ENSG00000111245",
+        "nm_id": "NM_000432",
+        "enst": "ENST00000228841",
+        "reportable": "all"
+    },
+    "ENSG00000160808": {
+        "gene": "MYL3",
+        "moi": "AD",
+        "gene_id": "ENSG00000160808",
+        "nm_id": "NM_000258",
+        "enst": "ENST00000292327",
+        "reportable": "all"
+    },
+    "ENSG00000186575": {
+        "gene": "NF2",
+        "moi": "AD",
+        "gene_id": "ENSG00000186575",
+        "nm_id": "NM_000268",
+        "enst": "ENST00000338641",
+        "reportable": "all"
+    },
+    "ENSG00000036473": {
+        "gene": "OTC",
+        "moi": "XL",
+        "gene_id": "ENSG00000036473",
+        "nm_id": "NM_000531",
+        "enst": "ENST00000039007",
+        "reportable": "all"
+    },
+    "ENSG00000083093": {
+        "gene": "PALB2",
+        "moi": "AD",
+        "gene_id": "ENSG00000083093",
+        "nm_id": "NM_024675",
+        "enst": "ENST00000261584",
+        "reportable": "all"
+    },
+    "ENSG00000169174": {
+        "gene": "PCSK9",
+        "moi": "AD",
+        "gene_id": "ENSG00000169174",
+        "nm_id": "NM_174936",
+        "enst": "ENST00000302118",
+        "reportable": "all"
+    },
+    "ENSG00000057294": {
+        "gene": "PKP2",
+        "moi": "AD",
+        "gene_id": "ENSG00000057294",
+        "nm_id": "NM_001005242",
+        "enst": "ENST00000340811",
+        "reportable": "all"
+    },
+    "ENSG00000198523": {
+        "gene": "PLN",
+        "moi": "AD",
+        "gene_id": "ENSG00000198523",
+        "nm_id": "NM_002667",
+        "enst": "ENST00000357525",
+        "reportable": "all"
+    },
+    "ENSG00000122512": {
+        "gene": "PMS2",
+        "moi": "AD",
+        "gene_id": "ENSG00000122512",
+        "nm_id": "NM_000535",
+        "enst": "ENST00000265849",
+        "reportable": "all"
+    },
+    "ENSG00000106617": {
+        "gene": "PRKAG2",
+        "moi": "AD",
+        "gene_id": "ENSG00000106617",
+        "nm_id": "NM_016203",
+        "enst": "ENST00000287878",
+        "reportable": "all"
+    },
+    "ENSG00000171862": {
+        "gene": "PTEN",
+        "moi": "AD",
+        "gene_id": "ENSG00000171862",
+        "nm_id": "NM_000314",
+        "enst": "ENST00000371953",
+        "reportable": "all"
+    },
+    "ENSG00000139687": {
+        "gene": "RB1",
+        "moi": "AD",
+        "gene_id": "ENSG00000139687",
+        "nm_id": "NM_000321",
+        "enst": "ENST00000267163",
+        "reportable": "all"
+    },
+    "ENSG00000203867": {
+        "gene": "RBM20",
+        "moi": "AD",
+        "gene_id": "ENSG00000203867",
+        "nm_id": "NM_001134363",
+        "enst": "ENST00000369519",
+        "reportable": "all"
+    },
+    "ENSG00000165731": {
+        "gene": "RET",
+        "moi": "AD",
+        "gene_id": "ENSG00000165731",
+        "nm_id": "NM_020975",
+        "enst": "ENST00000355710",
+        "reportable": "all"
+    },
+    "ENSG00000116745": {
+        "gene": "RPE65",
+        "moi": "AR",
+        "gene_id": "ENSG00000116745",
+        "nm_id": "NM_000329",
+        "enst": "ENST00000262340",
+        "reportable": "all"
+    },
+    "ENSG00000196218": {
+        "gene": "RYR1",
+        "moi": "AD",
+        "gene_id": "ENSG00000196218",
+        "nm_id": "NM_000540",
+        "enst": "ENST00000359596",
+        "reportable": "all"
+    },
+    "ENSG00000198626": {
+        "gene": "RYR2",
+        "moi": "AD",
+        "gene_id": "ENSG00000198626",
+        "nm_id": "NM_001035",
+        "enst": "ENST00000366574",
+        "reportable": "all"
+    },
+    "ENSG00000183873": {
+        "gene": "SCN5A",
+        "moi": "AD",
+        "gene_id": "ENSG00000183873",
+        "nm_id": "NM_000335",
+        "enst": "ENST00000423572",
+        "reportable": "all"
+    },
+    "ENSG00000167985": {
+        "gene": "SDHAF2",
+        "moi": "AD",
+        "gene_id": "ENSG00000167985",
+        "nm_id": "NM_017841",
+        "enst": "ENST00000301761",
+        "reportable": "all"
+    },
+    "ENSG00000117118": {
+        "gene": "SDHB",
+        "moi": "AD",
+        "gene_id": "ENSG00000117118",
+        "nm_id": "NM_003000",
+        "enst": "ENST00000375499",
+        "reportable": "all"
+    },
+    "ENSG00000143252": {
+        "gene": "SDHC",
+        "moi": "AD",
+        "gene_id": "ENSG00000143252",
+        "nm_id": "NM_003001",
+        "enst": "ENST00000367975",
+        "reportable": "all"
+    },
+    "ENSG00000204370": {
+        "gene": "SDHD",
+        "moi": "AD",
+        "gene_id": "ENSG00000204370",
+        "nm_id": "NM_003002",
+        "enst": "ENST00000375549",
+        "reportable": "all"
+    },
+    "ENSG00000166949": {
+        "gene": "SMAD3",
+        "moi": "AD",
+        "gene_id": "ENSG00000166949",
+        "nm_id": "NM_005902",
+        "enst": "ENST00000327367",
+        "reportable": "all"
+    },
+    "ENSG00000141646": {
+        "gene": "SMAD4",
+        "moi": "AD",
+        "gene_id": "ENSG00000141646",
+        "nm_id": "NM_005359",
+        "enst": "ENST00000342988",
+        "reportable": "all"
+    },
+    "ENSG00000118046": {
+        "gene": "STK11",
+        "moi": "AD",
+        "gene_id": "ENSG00000118046",
+        "nm_id": "NM_000455",
+        "enst": "ENST00000326873",
+        "reportable": "all"
+    },
+    "ENSG00000106799": {
+        "gene": "TGFBR1",
+        "moi": "AD",
+        "gene_id": "ENSG00000106799",
+        "nm_id": "NM_004612",
+        "enst": "ENST00000374994",
+        "reportable": "all"
+    },
+    "ENSG00000163513": {
+        "gene": "TGFBR2",
+        "moi": "AD",
+        "gene_id": "ENSG00000163513",
+        "nm_id": "NM_003242",
+        "enst": "ENST00000295754",
+        "reportable": "all"
+    },
+    "ENSG00000135956": {
+        "gene": "TMEM127",
+        "moi": "AD",
+        "gene_id": "ENSG00000135956",
+        "nm_id": "NM_017849",
+        "enst": "ENST00000258439",
+        "reportable": "all"
+    },
+    "ENSG00000170876": {
+        "gene": "TMEM43",
+        "moi": "AD",
+        "gene_id": "ENSG00000170876",
+        "nm_id": "NM_024334",
+        "enst": "ENST00000306077",
+        "reportable": "all"
+    },
+    "ENSG00000114854": {
+        "gene": "TNNC1",
+        "moi": "AD",
+        "gene_id": "ENSG00000114854",
+        "nm_id": "NM_003280",
+        "enst": "ENST00000232975",
+        "reportable": "all"
+    },
+    "ENSG00000129991": {
+        "gene": "TNNI3",
+        "moi": "AD",
+        "gene_id": "ENSG00000129991",
+        "nm_id": "NM_000363",
+        "enst": "ENST00000344887",
+        "reportable": "all"
+    },
+    "ENSG00000118194": {
+        "gene": "TNNT2",
+        "moi": "AD",
+        "gene_id": "ENSG00000118194",
+        "nm_id": "NM_001276345",
+        "enst": "ENST00000656932",
+        "reportable": "all"
+    },
+    "ENSG00000141510": {
+        "gene": "TP53",
+        "moi": "AD",
+        "gene_id": "ENSG00000141510",
+        "nm_id": "NM_000546",
+        "enst": "ENST00000269305",
+        "reportable": "all"
+    },
+    "ENSG00000140416": {
+        "gene": "TPM1",
+        "moi": "AD",
+        "gene_id": "ENSG00000140416",
+        "nm_id": "NM_001018005",
+        "enst": "ENST00000403994",
+        "reportable": "all"
+    },
+    "ENSG00000186439": {
+        "gene": "TRDN",
+        "moi": "AR",
+        "gene_id": "ENSG00000186439",
+        "nm_id": "NM_006073",
+        "enst": "ENST00000334268",
+        "reportable": "all"
+    },
+    "ENSG00000165699": {
+        "gene": "TSC1",
+        "moi": "AD",
+        "gene_id": "ENSG00000165699",
+        "nm_id": "NM_000368",
+        "enst": "ENST00000298552",
+        "reportable": "all"
+    },
+    "ENSG00000103197": {
+        "gene": "TSC2",
+        "moi": "AD",
+        "gene_id": "ENSG00000103197",
+        "nm_id": "NM_000548",
+        "enst": "ENST00000219476",
+        "reportable": "all"
+    },
+    "ENSG00000155657": {
+        "gene": "TTN",
+        "moi": "AD",
+        "gene_id": "ENSG00000155657",
+        "nm_id": "NM_001267550",
+        "enst": "ENST00000589042",
+        "reportable": "consequence",
+        "specific_type": "truncating"
+    },
+    "ENSG00000118271": {
+        "gene": "TTR",
+        "moi": "AD",
+        "gene_id": "ENSG00000118271",
+        "nm_id": "NM_000371",
+        "enst": "ENST00000237014",
+        "reportable": "all"
+    },
+    "ENSG00000134086": {
+        "gene": "VHL",
+        "moi": "AD",
+        "gene_id": "ENSG00000134086",
+        "nm_id": "NM_000551",
+        "enst": "ENST00000256474",
+        "reportable": "all"
+    },
+    "ENSG00000184937": {
+        "gene": "WT1",
+        "moi": "AD",
+        "gene_id": "ENSG00000184937",
+        "nm_id": "NM_024426",
+        "enst": "ENST00000452863",
+        "reportable": "all"
+    }
+}
