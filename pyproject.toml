@@ -22,21 +22,17 @@ classifiers=[
 
 dependencies=[
     'cpg-flow>=1',
-    'hatchling',
 ]
 
 [project.urls]
-Repository = "https://github.com/populationgenomics/cpg-flow-align-genotype"
+Repository = "https://github.com/populationgenomics/talos-af"
 
 [project.optional-dependencies]
-test = [
+dev = [
     'bump-my-version',
     'pre-commit',
     'pytest',
 ]
-
-[project.scripts]
-# nothing here yet
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/talos_af"]
