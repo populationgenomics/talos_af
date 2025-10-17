@@ -1,0 +1,60 @@
+"""
+script for taking the ACMG specification
+
+This is aimed at the supplementary table from the publication:
+ - https://www.sciencedirect.com/science/article/pii/S1098360025001017#mmc1
+ - this is natively in a xlsx format, which is harder to parse
+ - open the spreadsheet, trim off the top two rows, and remove any trailing non-data rows
+ - save the result as a TSV, and use that as input to this script
+
+The results of running this script on criteria v3.3 will be enclosed here.
+
+The other required file is MANE.GRCh38.v1.4.summary.txt.gz from the NCBI FTP site:
+ - https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.4/MANE.GRCh38.v1.4.summary.txt.gz
+ - the ACMG release only contains gene symbols, so we use this to map these to ENSG IDs for each gene
+"""
+
+import gzip
+from argparse import ArgumentParser
+from csv import DictReader
+
+
+def get_mane_mapping(mane_path: str) -> dict[str, dict[str, str]]:
+    """
+    Relevant column headings:
+    - Ensembl_Gene: ENSG ID (with trailing decimal)
+    - symbol: Gene symbol
+    - RefSeq_nuc: NM ID with trailing decimal
+    - Ensembl_nuc: ENST with trailing decimal
+
+    Returns:
+        Dict, indexed on symbol, containing a corresponding ENSG, and a preferred refseq & ensembl transcript ID
+    """
+
+    mane_mapping = {}
+    with gzip.open(mane_path, "rt") as mane_file:
+        mane_reader = DictReader(mane_file, delimiter="\t")
+        for line in mane_reader:
+            symbol = line["symbol"]
+            ensg = line["Ensembl_Gene"]
+            nm_id = line["RefSeq_nuc"]
+            enst = line["Ensembl_nuc"]
+            mane_mapping[symbol] = {
+                'ensg': ensg,
+                'nm_id': nm_id,
+                'enst': enst,
+            }
+    return mane_mapping
+
+
+def main(input_spec: str, output_path: str, mane: str) -> None:
+    ...
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('--input', help='ACMG specification csv file')
+    parser.add_argument('--output', help='Location to write a minimised spec to')
+    parser.add_argument('--mane', help='The MANE text file')
+    args = parser.parse_args()
+    main(args.input, args.output, args.mane)
