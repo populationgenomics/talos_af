@@ -3,6 +3,9 @@ takes a alphamissense tsv as input, filters regions, and outputs a new... file. 
 
 input columns:
 #CHROM POS REF ALT genome uniprot_id transcript_id protein_variant am_pathogenicity am_class
+
+Using https://zenodo.org/records/8208688/files/AlphaMissense_hg38.tsv.gz?download=1
+- 613MB, containing all the pre-computed data we're interested in
 """
 
 import gzip
@@ -68,7 +71,8 @@ def main(input_am: str, input_bed: str, output: str):
                             llist[8],  # score
                             llist[9],  # class
                         ]
-                    ) + '\n'
+                    )
+                    + '\n'
                 )
 
 

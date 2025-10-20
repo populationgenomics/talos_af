@@ -3,6 +3,9 @@ takes a revel csv as input, filters regions, and outputs a new... file. TBC
 
 input columns:
 chr,hg19_pos,grch38_pos,ref,alt,aaref,aaalt,REVEL,Ensembl_transcriptid
+
+trying this with https://zenodo.org/records/7072866/files/revel-v1.3_all_chromosomes.zip?download=1
+- this is the 630MB file, compressing 6.5GB of raw pre-computed data
 """
 
 import zipfile
@@ -28,7 +31,9 @@ def process_bed(bed_file: str) -> REGION_DICT:
         for line in handle:
             llist = line.strip().split('\t')
             chrom = llist[0][3:]
-            bed_regions[chrom].append((int(llist[1]), int(llist[2])))
+            start = int(llist[1])
+            end = int(llist[2])
+            bed_regions[chrom].append((start, end))
 
     return bed_regions
 
@@ -73,7 +78,8 @@ def main(input_revel: str, input_bed: str, output: str):
                                 llist[7],
                                 llist[8],
                             ]
-                        ) + '\n'
+                        )
+                        + '\n'
                     )
 
 
