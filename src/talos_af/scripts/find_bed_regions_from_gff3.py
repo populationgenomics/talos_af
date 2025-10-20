@@ -28,12 +28,11 @@ FLANKING_REGION = 2000
 # regular expressions to parse out sections of the GFF3 annotations
 GENE_ID_RE = re.compile(r'gene:(ENSG\d+);')
 
-CANONICAL_CONTIGS = [f'chr{x}' for x in list(range(1, 23))] + ['chrX', 'chrY', 'chrM']
-
 
 def main(input_spec: str, gff3_file: str, output: str):
     """
     Read the GFF3 file, and generate a BED file of gene regions, plus padding
+
     Args:
         input_spec (str): the input GFF3 file
         gff3_file (str): path to the GFF3 file
@@ -69,11 +68,7 @@ def generate_bed_lines(
             line_as_list = line.rstrip().split('\t')
 
             # skip over non-genes (e.g. pseudogenes, ncRNA), only focus on Ensembl genes/transcripts
-            if (
-                line_as_list[TYPE_INDEX] != 'gene'
-                or 'ensembl' not in line_as_list[RESOURCE_INDEX]
-                or f'chr{line_as_list[CHROM_INDEX]}' not in CANONICAL_CONTIGS
-            ):
+            if line_as_list[TYPE_INDEX] != 'gene' or 'ensembl' not in line_as_list[RESOURCE_INDEX]:
                 continue
 
             # extract the gene ID from the details field
