@@ -20,7 +20,6 @@ import re
 from argparse import ArgumentParser
 from csv import DictReader
 
-
 P_AND_LP = 'P and LP'
 SPECIFIC_CHANGE = re.compile(r'(p.[A-Z][0-9]+[A-Z]) (?:\w+ )?only')
 
@@ -38,13 +37,13 @@ def get_mane_mapping(mane_path: str) -> dict[str, dict[str, str]]:
     """
 
     mane_mapping = {}
-    with gzip.open(mane_path, "rt") as mane_file:
-        mane_reader = DictReader(mane_file, delimiter="\t")
+    with gzip.open(mane_path, 'rt') as mane_file:
+        mane_reader = DictReader(mane_file, delimiter='\t')
         for line in mane_reader:
-            symbol = line["symbol"]
-            ensg = line["Ensembl_Gene"].split('.')[0]
-            nm_id = line["RefSeq_nuc"].split('.')[0]
-            enst = line["Ensembl_nuc"].split('.')[0]
+            symbol = line['symbol']
+            ensg = line['Ensembl_Gene'].split('.')[0]
+            nm_id = line['RefSeq_nuc'].split('.')[0]
+            enst = line['Ensembl_nuc'].split('.')[0]
             mane_mapping[symbol] = {
                 'ensg': ensg,
                 'nm_id': nm_id,
@@ -53,25 +52,24 @@ def get_mane_mapping(mane_path: str) -> dict[str, dict[str, str]]:
     return mane_mapping
 
 
-def main(input_spec: str, output_path: str, mane: str) -> None:
+def main(input_spec: str, output_path: str, mane_file: str) -> None:
+    parsed: dict = {}
+    mane_mapping = get_mane_mapping(mane_file)
 
-    parsed = {}
-    mane_mapping = get_mane_mapping(mane)
-
-    with open(input_spec, "r") as input_file:
-        reader = DictReader(input_file, delimiter="\t")
+    with open(input_spec) as input_file:
+        reader = DictReader(input_file, delimiter='\t')
         for row in reader:
             gene = row['Gene']
 
             # hard lookup here, we don't expect or allow failures. These are super well known genes
-            mane = mane_mapping[gene]
+            mane_content = mane_mapping[gene]
 
             row_dict = {
                 'gene': gene,
                 'moi': row['Inheritance'],
-                'gene_id': mane['ensg'],
-                'nm_id': mane['nm_id'],
-                'enst': mane['enst'],
+                'gene_id': mane_content['ensg'],
+                'nm_id': mane_content['nm_id'],
+                'enst': mane_content['enst'],
             }
 
             vars_to_report = row['Variants to report']
@@ -87,13 +85,13 @@ def main(input_spec: str, output_path: str, mane: str) -> None:
                 row_dict['reportable'] = 'specific'
                 row_dict['specific_type'] = result[0]
 
-            parsed[mane['ensg']] = row_dict
+            parsed[mane_content['ensg']] = row_dict
 
-    with open(output_path, "w", encoding='utf-8') as output_file:
+    with open(output_path, 'w', encoding='utf-8') as output_file:
         json.dump(parsed, output_file, indent=4)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--input', help='ACMG specification csv file')
     parser.add_argument('--output', help='Location to write a minimised spec to')

@@ -21,7 +21,7 @@ classifiers=[
 ]
 
 dependencies=[
-    'cpg-flow>=1',
+    'loguru',
 ]
 
 [project.urls]
