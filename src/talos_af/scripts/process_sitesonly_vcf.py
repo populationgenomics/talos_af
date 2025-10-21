@@ -7,8 +7,8 @@ re-arrange it into a HailTable for use with the Talos pipeline.
 This process combines the AF/CSQs already applied with REVEL and AlphaMissense annotations
 """
 
+import json
 from argparse import ArgumentParser
-from collections import defaultdict
 
 import hail as hl
 from loguru import logger
@@ -106,47 +106,39 @@ def csq_strings_into_hail_structs(csq_strings: list[str], ht: hl.Table | hl.Matr
     )
 
 
-def annotate_gene_ids(ht: hl.Table, bed_file: str) -> hl.Table:
+def annotate_gene_ids(ht: hl.Table, acmg_spec_path: str) -> hl.Table:
     """
-    Using a BED file to generate lookup, annotate each transcript consequence with the Ensembl gene ID(s).
+    Using a JSON file as a lookup, annotate transcript consequences with Ensembl gene ID.
     """
 
-    # indexed on contig, then gene symbol: ID
-    id_dict: dict[str, dict[str, str]] = defaultdict(dict)
+    with open(acmg_spec_path) as f:
+        acmg_spec = json.load(f)
 
-    with open(bed_file) as handle:
-        for line in handle:
-            # skip over headers and dividing lines
-            if line.startswith('#'):
-                continue
-
-            chrom, _start, _end, details = line.rstrip().split('\t')
-            ensg, symbol = details.split(';')
-            id_dict[chrom][symbol] = ensg
-
-    id_hl_dict = hl.literal(id_dict)
+    id_hl_dict = hl.literal({value['gene_id']: key for key, value in acmg_spec.items()})
 
     # take the ENSG value from the dict for the contig (correctly matches PAR region genes)
     # default to the gene symbol (which can be the ENSG, depending on transcript consequence)
     return ht.annotate(
         transcript_consequences=hl.map(
             lambda x: x.annotate(
-                gene_id=id_hl_dict[ht.locus.contig].get(x.gene, x.gene),
+                gene_id=id_hl_dict.get(x.gene, x.gene),
             ),
             ht.transcript_consequences,
         ),
     )
 
 
-def insert_am_annotations(ht: hl.Table, am_table: str) -> hl.Table:
+def insert_ext_annotations(ht: hl.Table, am_table_path: str, revel_table_path: str) -> hl.Table:
     """
-    Load up a Hail Table of AlphaMissense annotations, and annotate this data unless the AM annotations already exist.
+    Load up Hail Tables of External annotations, add this data by matching transcript IDs.
     """
 
-    logger.info(f'Reading AM annotations from {am_table} and applying to MT')
+    logger.info(f'Reading AM annotations from {am_table_path} and applying to MT')
+    logger.info(f'Reading REVEL annotations from {revel_table_path} and applying to MT')
 
     # read in the hail table containing alpha missense annotations
-    am_ht = hl.read_table(am_table)
+    am_ht = hl.read_table(am_table_path)
+    revel_ht = hl.read_table(revel_table_path)
 
     # AM consequence matching needs conditional application based on the specific transcript match
     return ht.annotate(
@@ -157,31 +149,11 @@ def insert_am_annotations(ht: hl.Table, am_table: str) -> hl.Table:
                     am_ht[ht.key].am_class,
                     MISSING_STRING,
                 ),
-                am_pathogenicity=hl.if_else(
+                am_score=hl.if_else(
                     x.transcript == am_ht[ht.key].transcript,
-                    am_ht[ht.key].am_pathogenicity,
+                    am_ht[ht.key].am_score,
                     MISSING_FLOAT,
                 ),
-            ),
-            ht.transcript_consequences,
-        ),
-    )
-
-
-def insert_revel_annotations(ht: hl.Table, revel_path: str) -> hl.Table:
-    """
-    Load up a Hail Table of REVEL annotations.
-    """
-
-    logger.info(f'Reading REVEL annotations from {revel_path} and applying to MT')
-
-    # read in the hail table containing alpha missense annotations
-    revel_ht = hl.read_table(revel_path)
-
-    # REVEL consequence matching needs conditional application based on the specific transcript match
-    return ht.annotate(
-        transcript_consequences=hl.map(
-            lambda x: x.annotate(
                 revel_score=hl.if_else(
                     x.transcript == revel_ht[ht.key].transcript,
                     revel_ht[ht.key].score,
@@ -201,16 +173,16 @@ def cli_main():
 
     parser = ArgumentParser(description='Takes a BCSQ annotated VCF and makes it a HT')
     parser.add_argument('--input', help='Path to the annotated sites-only VCF', required=True)
-    parser.add_argument('--output', help='output Table path, must have a ".ht" extension', required=True)
-    parser.add_argument('--gene_bed', help='BED file containing gene mapping')
+    parser.add_argument('--acmg_spec', help='BED file containing gene mapping')
     parser.add_argument('--am', help='Hail Table containing AlphaMissense annotations', required=True)
     parser.add_argument('--revel', help='Hail Table containing REVEL annotations', required=True)
+    parser.add_argument('--output', help='output Table path, must have a ".ht" extension', required=True)
     args = parser.parse_args()
 
     main(
         vcf_path=args.input,
         output_path=args.output,
-        gene_bed=args.gene_bed,
+        acmg_spec=args.acmg_spec,
         alpha_m=args.am,
         revel=args.revel,
     )
@@ -219,7 +191,7 @@ def cli_main():
 def main(
     vcf_path: str,
     output_path: str,
-    gene_bed: str,
+    acmg_spec: str,
     alpha_m: str,
     revel: str,
 ):
@@ -230,7 +202,7 @@ def main(
     Args:
         vcf_path (str): path to the annotated sites-only VCF
         output_path (str): path to write the resulting Hail Table to, must
-        gene_bed (str): path to a BED file containing gene IDs, derived from the Ensembl GFF3 file
+        acmg_spec (str): path to an acmg_spec JSON
         alpha_m (str): path to the AlphaMissense Hail Table, required
         revel (str): path to a REVEL Hail Table for enhanced annotation
     """
@@ -247,20 +219,23 @@ def main(
     # checkpoint the rows as a Table locally to make everything downstream faster
     ht = mt.rows().checkpoint('checkpoint.ht', overwrite=True, _read_if_exists=True)
 
+    logger.info('VCF imported and checkpointed as a Hail Table')
+
     # re-shuffle the BCSQ elements
     ht = csq_strings_into_hail_structs(csq_fields, ht)
 
-    # add ENSG IDs where possible
-    ht = annotate_gene_ids(ht, bed_file=gene_bed)
+    # add ENSG IDs
+    ht = annotate_gene_ids(ht, acmg_spec_path=acmg_spec)
 
     # get a hold of the geneIds - use some aggregation
     ht = ht.annotate(gene_ids=hl.set(ht.transcript_consequences.map(lambda c: c.gene_id)))
 
-    # add AlphaMissense scores
-    ht = insert_am_annotations(ht, am_table=alpha_m)
+    # checkpoint before combining with external tables
+    ht = mt.rows().checkpoint('checkpoint_ext_tables.ht', overwrite=True, _read_if_exists=True)
+    logger.info('Checkpointed prior to AM/Revel annotation')
 
-    # add REVEN scores
-    ht = insert_revel_annotations(ht, revel_path=revel)
+    # add AlphaMissense scores
+    ht = insert_ext_annotations(ht, am_table_path=alpha_m, revel_table_path=revel)
 
     # drop the BCSQ field
     ht = ht.annotate(info=ht.info.drop('BCSQ'))

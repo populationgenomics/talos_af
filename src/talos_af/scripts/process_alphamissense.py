@@ -21,7 +21,7 @@ def convert_to_ht(input_file: str, output_path: str):
     hl.context.init_spark(master='local[*]', default_reference='GRCh38', quiet=True)
 
     # read the TSV, setting some non-string types
-    types = {'score': hl.tfloat32}
+    types = {'am_score': hl.tfloat32}
 
     ht = hl.import_table(input_file, types=types, delimiter='\t', skip_blank_lines=True)
 
@@ -39,7 +39,7 @@ def convert_to_ht(input_file: str, output_path: str):
 def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, output_path: str):
     with gzip.open(input_file, 'rt') as handle, open(output_path, 'w') as out:
         # write the file header
-        out.write('locus\tref\talt\ttranscript\tscore\tclass\n')
+        out.write('locus\tref\talt\ttranscript\tam_score\tam_class\n')
 
         for line in handle:
             if line.startswith('#'):

@@ -4,6 +4,8 @@ nextflow.enable.dsl=2
 
 include { AnnotateCsq } from './modules/AnnotateCsq/main'
 include { AnnotateGnomadAfs } from './modules/AnnotateGnomadAfs/main'
+include { AnnotatedVcfToHt } from './modules/AnnotatedVcfToHt/main'
+include { CombineAnnotationsAndFilterMt } from './modules/CombineAnnotationsAndFilterMt/main'
 include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
 include { MakeSitesOnlyVcf } from './modules/MakeSitesOnlyVcf/main'
 include { ParseAlphaMissenseIntoHt } from './modules/ParseAlphaMissenseIntoHt/main'
@@ -13,26 +15,18 @@ include { PrepareAcmgSpec } from './modules/PrepareAcmgSpec/main'
 
 workflow {
 
-    // populate ref genome input channel
-    ch_ref_genome = channel.fromPath(
-    	params.ref_genome,
-    	checkIfExists: true,
-	)
+    // populate various input channels
+    ch_ref_genome = channel.fromPath(params.ref_genome, checkIfExists: true)
+	ch_acmg_spec = channel.fromPath(params.acmg_spec, checkIfExists: true)
+	ch_mane_input = channel.fromPath(params.mane_input, checkIfExists: true)
+	ch_gff3 = channel.fromPath(params.gff_input, checkIfExists: true)
 
-	ch_acmg_spec = channel.fromPath(
-	    params.acmg_spec,
-	    checkIfExists: true,
-	)
+    ch_input_vcf = channel.fromPath(params.input_vcf, checkIfExists: true)
+    ch_input_vcf_index = channel.fromPath("${params.input_vcf}.tbi", checkIfExists: true)
 
-	ch_mane_input = channel.fromPath(
-	    params.mane_input,
-	    checkIfExists: true,
-	)
-
-	ch_gff3 = channel.fromPath(
-	    params.gff_input,
-	    checkIfExists: true,
-	)
+    // read the echtvar reference file as an input channel
+    ch_gnomad_echtvar = channel.fromPath(params.echtvar, checkIfExists: true)
+    ch_clinvar_tar = channel.fromPath(params.clinvar, checkIfExists: true)
 
     PrepareAcmgSpec(
         ch_acmg_spec,
@@ -76,21 +70,6 @@ workflow {
         ch_revel_table = ParseRevelIntoHt.out.ht
     }
 
-    // now the data-centric steps
-    ch_input_vcf = channel.fromPath(
-        params.input_vcf,
-        checkIfExists: true,
-    )
-    ch_input_vcf_index = channel.fromPath(
-        "${params.input_vcf}.tbi",
-        checkIfExists: true,
-    )
-
-    // read the echtvar reference file as an input channel
-    ch_gnomad_echtvar = channel.fromPath(
-		params.echtvar,
-		checkIfExists: true
-    )
     FilterVcfToBed(
         ch_input_vcf,
         ch_input_vcf_index,
@@ -113,5 +92,21 @@ workflow {
         AnnotateGnomadAfs.out,
         ch_gff3,
         ch_ref_genome,
+    )
+
+    // reformat the annotations in the VCF, retain as a Hail Table
+    AnnotatedVcfToHt(
+        AnnotateCsq.out,
+        ch_alphamissense_table,
+        ch_revel_table,
+        PrepareAcmgSpec.out,
+    )
+
+    // re-integrate the variants and the annotations, then apply filtering rules
+    CombineAnnotationsAndFilterMt(
+        FilterVcfToBed.out,
+        AnnotatedVcfToHt.out,
+        ch_clinvar_tar,
+        PrepareAcmgSpec.out,
     )
 }
