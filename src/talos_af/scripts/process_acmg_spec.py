@@ -94,7 +94,7 @@ def main(input_spec: str, output_path: str, mane_file: str) -> None:
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--input', help='ACMG specification csv file')
-    parser.add_argument('--output', help='Location to write a minimised spec to')
     parser.add_argument('--mane', help='The MANE text file')
+    parser.add_argument('--output', help='Location to write a minimised spec to')
     args = parser.parse_args()
     main(args.input, args.output, args.mane)

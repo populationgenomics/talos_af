@@ -1,6 +1,5 @@
-# Script for gathering large inputs required by Talos
-# This runs a download from multiple different sources
-# Output file names created/expected by this script match the initial configuration file content in `talos.config` and `annotation.config`
+# Script for gathering large inputs required by Talos_af from multiple different sources
+# Output file names created/expected by this script match the initial configuration file content in `talos_af.config`
 
 TMX=$(command -v tmux)
 POLL_INTERVAL=1
@@ -123,6 +122,12 @@ CLINVAR="clinvarbitration.tar.gz"
 start_download \
   https://zenodo.org/records/17393849/files/clinvarbitration_Oct_2025_clinvar_decisions.release.tar.gz?download=1 \
   "${CLINVAR}"
+
+# MANE gene data
+MANE="mane_1_4.summary.txt.gz"
+start_download \
+  https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.4/MANE.GRCh38.v1.4.summary.txt.gz \
+  "${MANE}"
 
 # AlphaMissense raw data
 AM="AlphaMissense_hg38.tsv.gz"
