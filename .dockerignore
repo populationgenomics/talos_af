@@ -1,0 +1,8 @@
+test
+build
+.pytest*
+.github
+.coverage*
+.nextflow
+
+large_files

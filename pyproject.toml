@@ -33,6 +33,7 @@ dev = [
     'bump-my-version',
     'pre-commit',
     'pytest',
+    'ruff',
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -74,6 +75,7 @@ ignore = [
     "COM812", # Trailing comma prohibited
     "G004", # Logging statement uses f-string
     "Q000", # Single quotes found but double quotes preferred
+    "PLR2004", # Magic value used in comparison, consider replacing `n` with a constant variable
 ]
 
 [tool.ruff.lint.isort]
