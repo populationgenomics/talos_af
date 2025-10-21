@@ -54,18 +54,18 @@ def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, output_tsv: str)
                 position = llist[2]
 
                 # there are some of these
-                if position == '.' or chrom == 'chr':
+                if position == '.' or chrom == 'chrchr':
                     continue
 
                 if region_of_interest(regions=regions, chrom=chrom, pos=int(position)):
                     out.write(
                         '\t'.join(
                             [
-                                f'chr{chrom}:{position}',
-                                llist[3],
-                                llist[4],
-                                llist[7],
-                                llist[8],
+                                f'{chrom}:{position}',  # locus
+                                llist[3],  # ref
+                                llist[4],  # alt
+                                llist[7],  # score
+                                llist[8],  # transcript
                             ]
                         )
                         + '\n'
@@ -85,4 +85,4 @@ if __name__ == '__main__':
     parser.add_argument('--output_tsv', help='output TSV file')
     parser.add_argument('--output_ht', help='output HT path')
     args = parser.parse_args()
-    main(input_revel=args.input, input_bed=args.bed, output_tsv=args.output, output_ht=args.output_ht)
+    main(input_revel=args.input, input_bed=args.bed, output_tsv=args.output_tsv, output_ht=args.output_ht)
