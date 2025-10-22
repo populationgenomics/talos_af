@@ -26,6 +26,7 @@ process AnnotateCsq {
         -B 20 \
         -W=tbi \
         -Oz -o "${params.cohort}_csq.vcf.bgz" \
+        --unify-chr-names chr,-,chr \
         ${vcf}
     """
 }

@@ -107,21 +107,19 @@ def csq_strings_into_hail_structs(csq_strings: list[str], ht: hl.Table | hl.Matr
 
 
 def annotate_gene_ids(ht: hl.Table, acmg_spec_path: str) -> hl.Table:
-    """
-    Using a JSON file as a lookup, annotate transcript consequences with Ensembl gene ID.
-    """
+    """Using a JSON file as a lookup, annotate transcript consequences with Ensembl gene ID."""
 
     with open(acmg_spec_path) as f:
         acmg_spec = json.load(f)
 
-    id_hl_dict = hl.literal({value['gene_id']: key for key, value in acmg_spec.items()})
+    id_hl_dict = hl.literal({value['gene']: key for key, value in acmg_spec.items()})
 
     # take the ENSG value from the dict for the contig (correctly matches PAR region genes)
     # default to the gene symbol (which can be the ENSG, depending on transcript consequence)
     return ht.annotate(
         transcript_consequences=hl.map(
             lambda x: x.annotate(
-                gene_id=id_hl_dict.get(x.gene, x.gene),
+                gene_id=id_hl_dict[x.gene],
             ),
             ht.transcript_consequences,
         ),
@@ -129,15 +127,10 @@ def annotate_gene_ids(ht: hl.Table, acmg_spec_path: str) -> hl.Table:
 
 
 def insert_ext_annotations(ht: hl.Table, am_table_path: str, revel_table_path: str) -> hl.Table:
-    """
-    Load up Hail Tables of External annotations, add this data by matching transcript IDs.
-    """
-
+    """Load up Hail Tables of External annotations, add this data by matching transcript IDs."""
     logger.info(f'Reading AM annotations from {am_table_path} and applying to MT')
-    logger.info(f'Reading REVEL annotations from {revel_table_path} and applying to MT')
-
-    # read in the hail table containing alpha missense annotations
     am_ht = hl.read_table(am_table_path)
+    logger.info(f'Reading REVEL annotations from {revel_table_path} and applying to MT')
     revel_ht = hl.read_table(revel_table_path)
 
     # AM consequence matching needs conditional application based on the specific transcript match
@@ -157,7 +150,7 @@ def insert_ext_annotations(ht: hl.Table, am_table_path: str, revel_table_path: s
                 revel_score=hl.if_else(
                     x.transcript == revel_ht[ht.key].transcript,
                     revel_ht[ht.key].score,
-                    MISSING_STRING,
+                    MISSING_FLOAT,
                 ),
             ),
             ht.transcript_consequences,
@@ -231,7 +224,7 @@ def main(
     ht = ht.annotate(gene_ids=hl.set(ht.transcript_consequences.map(lambda c: c.gene_id)))
 
     # checkpoint before combining with external tables
-    ht = mt.rows().checkpoint('checkpoint_ext_tables.ht', overwrite=True, _read_if_exists=True)
+    ht = ht.checkpoint('checkpoint_ext_tables.ht', overwrite=True, _read_if_exists=True)
     logger.info('Checkpointed prior to AM/Revel annotation')
 
     # add AlphaMissense scores

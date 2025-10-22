@@ -11,19 +11,19 @@ process CombineAnnotationsAndFilterMt {
     publishDir params.output_dir, mode: 'copy'
 
     output:
-        path "${params.cohort}.mt"
+        path "${params.cohort}_labelled.vcf.bgz"
 
     script:
         """
         set -ex
 
-        tar --no-same-owner -zxf ${clinvar}
+        tar --no-same-owner -zxf ${clinvar_tar}
 
         python -m talos_af.scripts.process_annotated_callset \
             --input ${vcf} \
             --annotations ${annotations} \
             --clinvar clinvarbitration_data/clinvar_decisions.ht \
             --acmg_spec ${acmg_spec} \
-            --output ${params.cohort}.mt
+            --output ${params.cohort}_labelled.vcf.bgz
         """
 }
