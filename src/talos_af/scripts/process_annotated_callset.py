@@ -317,6 +317,17 @@ def main(
     # and now filter down to relevant variants, either being ClinVar pathogenic or high impact
     mt = mt.filter_rows((mt.info.clinvar_plp == 1) | (mt.info.highimpact == 1))
 
+    # obtain the massive CSQ string using method stolen from the Broad's Gnomad library
+    # also take the single gene_id (from the exploded attribute)
+    # and retrieves the gnomAD annotations
+    mt = mt.annotate_rows(
+        info=mt.info.annotate(
+            **mt.gnomad,
+            csq=csq_struct_to_string(mt.transcript_consequences),
+            gene_id=mt.gene_ids,
+        ),
+    )
+
     write_matrix_to_vcf(mt=mt, vcf_out=output_path)
 
 

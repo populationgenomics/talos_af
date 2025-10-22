@@ -114,12 +114,12 @@ def annotate_gene_ids(ht: hl.Table, acmg_spec_path: str) -> hl.Table:
 
     id_hl_dict = hl.literal({value['gene']: key for key, value in acmg_spec.items()})
 
-    # take the ENSG value from the dict for the contig (correctly matches PAR region genes)
-    # default to the gene symbol (which can be the ENSG, depending on transcript consequence)
+    # take the ENSG value from the dict
+    # if a gene ID wasn't matched to this parsed dictionary, it won't be relevant to the analysis
     return ht.annotate(
         transcript_consequences=hl.map(
             lambda x: x.annotate(
-                gene_id=id_hl_dict[x.gene],
+                gene_id=id_hl_dict.get(x.gene, 'REMOVE'),
             ),
             ht.transcript_consequences,
         ),

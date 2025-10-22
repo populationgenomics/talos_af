@@ -11,7 +11,9 @@ process CombineAnnotationsAndFilterMt {
     publishDir params.output_dir, mode: 'copy'
 
     output:
-        path "${params.cohort}_labelled.vcf.bgz"
+        tuple \
+            path("${params.cohort}_labelled.vcf.bgz"), \
+            path("${params.cohort}_labelled.vcf.bgz.tbi")
 
     script:
         """
