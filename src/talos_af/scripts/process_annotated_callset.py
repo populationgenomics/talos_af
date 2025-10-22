@@ -4,6 +4,18 @@
 Takes the full un-annotated joint-callset VCF,
 A HailTable of the formatted annotations,
 Integrates the two, writing a MatrixTable representation of the fully annotated VCF
+
+Potential avenue - do all the filtering and reannotation in the previous method -
+ - instead of that stage writing a HT which is used as annotation here, it applies filtering and writes a VCF
+ - we can then use bcftools isec to get only the common variants between the two VCFs
+ - we can then use bcftools annotate to hop the annotations from the sites-only to the full VCF.
+
+Overall, more gross? But avoids what could be a pretty heinous VCF -> MT -> VCF for full VCFs in a large cohort
+
+That also gives more reasons to apply ClinVar annotation using bcftools annotate or slivar or something, rather than a
+HT intersection.
+
+The split-vep plugin would mitigate the need for some of these operations. Less Hail the better?
 """
 
 import json
