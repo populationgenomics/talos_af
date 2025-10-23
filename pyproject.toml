@@ -21,8 +21,10 @@ classifiers=[
 ]
 
 dependencies=[
+    'cyvcf2',
     'hail',
     'loguru',
+    'mendelbrot',
 ]
 
 [project.urls]
