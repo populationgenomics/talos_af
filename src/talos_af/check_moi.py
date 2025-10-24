@@ -13,7 +13,7 @@ from talos_af import config, models
 from talos_af import utils as utils_af
 from talos_af.models import ReportableVariant
 
-HEMI_CHROMS = {'chrX, chrY'}
+HEMI_CHROMS = {'chrX', 'chrY'}
 
 
 @dataclass
