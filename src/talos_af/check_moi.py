@@ -3,6 +3,7 @@ whole new approach for testing MOI, very simple
 """
 
 import abc
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -60,10 +61,7 @@ class DominantFilter:
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
         # check against each small-variant filter
-        for key, threshold in self.small_dict.items():
-            if key in variant.info and variant.info[key] > threshold:
-                return True
-        return False
+        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
 
 
 @dataclass
@@ -77,10 +75,7 @@ class ClinVarFilter:
 
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
-        for key, threshold in self.small_dict.items():
-            if key in variant.info and variant.info[key] > threshold:
-                return True
-        return False
+        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
 
 
 @dataclass
@@ -95,10 +90,7 @@ class ClinVarDominantFilter:
 
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
-        for key, threshold in self.small_dict.items():
-            if key in variant.info and variant.info[key] > threshold:
-                return True
-        return False
+        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
 
 
 class BaseMoi(abc.ABC):
@@ -112,15 +104,15 @@ class BaseMoi(abc.ABC):
         self.applied_moi = applied_moi
         self.pedigree = pedigree
         self.minimum_depth = config.config_retrieve('minimum_depth', 10)
-        self.global_filter = GlobalFilter()
-        self.clinvar_filter = ClinVarFilter()
+        self.global_filter: GlobalFilter | DominantFilter = GlobalFilter()
+        self.clinvar_filter: ClinVarFilter | ClinVarDominantFilter = ClinVarFilter()
 
     @abc.abstractmethod
     def run(
         self,
         principal: models.VariantAf,
         comp_het: utils_af.CompHetDict,
-    ) -> list[models.ReportableVariant]:
+    ) -> dict[str, list[models.ReportableVariant]]:
         """
         run all applicable inheritance patterns and finds good fits
         """
@@ -188,28 +180,18 @@ class AD(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,
-    ) -> list[models.ReportableVariant]:
+        comp_het: utils_af.CompHetDict,  # noqa: ARG002
+    ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
-        classifications = []
+        classifications: dict[str, list[models.ReportableVariant]] = defaultdict(list)
 
         if self.variant_too_common(principal):
             return classifications
 
-        # which of the categories were relevant for this variant
-        reasons = {category for category in utils_af.CATEGORIES if principal.info[category]}
-
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.het_samples.union(principal.hom_samples):
-            classifications.append(
-                ReportableVariant(
-                    sample_id=sample_id,
-                    gene=principal.info.get('gene_id'),
-                    var_data=principal,
-                    reasons=reasons,
-                )
-            )
+            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
 
         return classifications
 
@@ -224,27 +206,17 @@ class AR(BaseMoi):
         self,
         principal: models.VariantAf,
         comp_het: utils_af.CompHetDict,
-    ) -> list[models.ReportableVariant]:
+    ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
-        classifications = []
+        classifications: dict[str, list[models.ReportableVariant]] = defaultdict(list)
 
         if self.variant_too_common(principal):
             return classifications
 
-        # which of the categories were relevant for this variant
-        reasons = {category for category in utils_af.CATEGORIES if principal.info[category]}
-
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.hom_samples:
-            classifications.append(
-                ReportableVariant(
-                    sample_id=sample_id,
-                    gene=principal.info.get('gene_id'),
-                    var_data=principal,
-                    reasons=reasons,
-                )
-            )
+            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
 
         for sample_id in principal.het_samples:
             support_vars = []
@@ -253,13 +225,10 @@ class AR(BaseMoi):
                     support_vars.append(partner)
 
             if support_vars:
-                classifications.append(
+                classifications[sample_id].append(
                     ReportableVariant(
-                        sample_id=sample_id,
-                        gene=principal.info.get('gene_id'),
-                        var_data=principal,
-                        reasons=reasons,
-                        support_vars={partner.info.get('var_link') for partner in support_vars},
+                        var_id=principal.coordinates.string_format,
+                        support_vars={partner.coordinates.string_format for partner in support_vars},
                     )
                 )
 
@@ -274,27 +243,17 @@ class XL(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,
-    ) -> list[models.ReportableVariant]:
+        comp_het: utils_af.CompHetDict,  # noqa: ARG002
+    ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
-        classifications = []
+        classifications: dict[str, list[models.ReportableVariant]] = defaultdict(list)
 
         if self.variant_too_common(principal):
             return classifications
 
-        # which of the categories were relevant for this variant
-        reasons = {category for category in utils_af.CATEGORIES if principal.info[category]}
-
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.hom_samples | principal.het_samples:
-            classifications.append(
-                ReportableVariant(
-                    sample_id=sample_id,
-                    gene=principal.info.get('gene_id'),
-                    var_data=principal,
-                    reasons=reasons,
-                )
-            )
+            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
 
         return classifications

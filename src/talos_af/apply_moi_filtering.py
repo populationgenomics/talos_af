@@ -10,7 +10,6 @@ import json
 from argparse import ArgumentParser
 from collections import defaultdict
 
-from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
 
 from talos_af import check_moi, models
@@ -39,31 +38,40 @@ def main(vcf_path: str, acmg_spec_path: str, pedigree_path: str, output_path: st
     with open(acmg_spec_path) as f:
         acmg_spec = json.load(f)
 
+    id_lookup = {value['gene']: key for key, value in acmg_spec.items()}
+
     pedigree = PedigreeParser(pedigree_path)
 
     moi_filter_dict = set_up_filters(acmg_spec, pedigree=pedigree)
 
     # gather all variants indexed by gene
-    gene_dict = utils_af.gather_gene_dict_from_vcf(vcf_path)
+    gene_dict = utils_af.gather_gene_dict_from_vcf(vcf_path, id_lookup)
 
-    all_results: dict[str, list[models.ReportableVariant]] = defaultdict(list)
+    selected_variants: dict[str, models.VariantAf] = {}
+    sample_results: dict[str, list[models.ReportableVariant]] = defaultdict(list)
 
     for gene_id, variants in gene_dict.items():
         comp_het_dict = utils_af.find_comp_hets(variants, pedigree)
         moi_to_use = acmg_spec[gene_id]['moi']
         for variant in variants:
-            all_results[gene_id].extend(moi_filter_dict[moi_to_use].run(variant, comp_het_dict))
+            if results := moi_filter_dict[moi_to_use].run(variant, comp_het_dict):
+                selected_variants[variant.coordinates.string_format] = variant
+                for sample, instances in results.items():
+                    sample_results[sample].extend(instances)
 
-    # write the output to long term storage using Pydantic
-    # validate the model against the schema, then write the result if successful
+    # write the output to long term storage using Pydantic - write if data is valid against the schema, write to file
     with open(output_path, 'w') as out_file:
-        out_file.write(models.ResultsAf.model_validate({'variants': all_results}).model_dump_json(indent=4))
+        out_file.write(
+            models.ResultsAf.model_validate(
+                {'variants': selected_variants, 'instances': sample_results}
+            ).model_dump_json(indent=4)
+        )
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--vcf', help='Labelled and annotated VCF file', required=True)
-    parser.add_argument('--acmg_spec', help='Specification of each gene\s interpretation rules', required=True)
+    parser.add_argument('--acmg_spec', help=r'Specification of each gene\s interpretation rules', required=True)
     parser.add_argument('--pedigree', help='Pedigree for the callset (required for sex)', required=True)
     parser.add_argument('--output', help='Path to write the output results to', required=True)
     args = parser.parse_args()

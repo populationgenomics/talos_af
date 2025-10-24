@@ -40,7 +40,7 @@ def config_retrieve(key: list[str] | str, default: Any | None = Unsupplied, conf
     True
     """
 
-    global _config
+    global _config  # noqa: PLW0603
     if _config is None:  # Lazily initialize the config.
         # when using default, extract from environment variable
         if config_path == ENV_VAR:

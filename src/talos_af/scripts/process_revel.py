@@ -18,7 +18,7 @@ from talos_af.utils import REGION_DICT, process_bed, region_of_interest
 def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, header: str, output: str):
     """Read the compressed TSV input file, filter it by the acceptable regions, and write as a new minimised BED."""
 
-    with zipfile.ZipFile(input_file) as ziphandle, gzip.open(output, 'wt') as out, open(header, 'r') as head_in:
+    with zipfile.ZipFile(input_file) as ziphandle, gzip.open(output, 'wt') as out, open(header) as head_in:
         for line in head_in:
             out.write(line)
 

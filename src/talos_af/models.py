@@ -36,6 +36,9 @@ class Coordinates(BaseModel):
 
 
 class VariantAf(BaseModel):
+    gene: str
+    clinvar_path: bool
+    high_impact: bool
     coordinates: Coordinates = Field(repr=True)
     info: dict[str, str | int | float] = Field(default_factory=dict)
     het_samples: set[str] = Field(default_factory=set, exclude=True)
@@ -61,23 +64,8 @@ class ReportableVariant(BaseModel):
     A variant passing MOI tests, to be reported
     """
 
-    sample_id: str
-    var_data: VariantAf
-    reasons: set[str] = Field(default_factory=set)
-    gene: str = Field(default_factory=str)
+    var_id: str
     support_vars: set[str] = Field(default_factory=set)
-
-    def __eq__(self, other):
-        """
-        makes reported variants comparable
-        """
-        return self.sample_id == other.sample_id and self.var_data.coordinates == other.var_data.coordinates
-
-    def __hash__(self):
-        return hash((self.sample_id, self.var_data.coordinates))
-
-    def __lt__(self, other):
-        return self.var_data.coordinates < other.var_data.coordinates
 
 
 class ResultsAf(BaseModel):
@@ -85,4 +73,5 @@ class ResultsAf(BaseModel):
     A representation of a result set
     """
 
-    variants: dict[str, list[ReportableVariant]] = Field(default_factory=dict)
+    variants: dict[str, VariantAf] = Field(default_factory=dict)
+    instances: dict[str, list[ReportableVariant]] = Field(default_factory=dict)

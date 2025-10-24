@@ -76,6 +76,7 @@ ignore = [
     "ANN001", # Missing type annotation for function argument
     "ANN201", # Missing return type annotation for public function
     "ANN204", # Missing type annotation for special method `__init__`
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
     "COM812", # Trailing comma prohibited
     "G004", # Logging statement uses f-string
     "Q000", # Single quotes found but double quotes preferred

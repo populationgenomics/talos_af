@@ -6,7 +6,6 @@ from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
 
 from talos_af import models
-from talos_af.scripts.process_annotated_callset import CSQ_STRING
 
 REGION_DICT = dict[str, list[tuple[int, int]]]
 
@@ -23,9 +22,29 @@ X_CHROMOSOME = {'X'}
 # used by cyvcf2 for... not phased
 PHASE_SET_DEFAULT = -2147483648
 
-CATEGORIES = {'highimpact', 'clinvar_plp'}
 GeneDict = dict[str, list[models.VariantAf]]
 CompHetDict = dict[str, dict[str, list[models.VariantAf]]]
+PATHOGENIC = 'Pathogenic/Likely Pathogenic'
+
+CRITICAL_CSQ_DEFAULT = [
+    'frameshift',
+    'splice_acceptor',
+    'splice_donor',
+    'start_lost',
+    'stop_gained',
+    'stop_lost',
+    'transcript_ablation',
+]
+CSQ_STRING = [
+    'consequence',
+    'gene',
+    'transcript',
+    'biotype',
+    'strand',
+    'amino_acid_change',
+    'dna_change',
+]
+PHASE_BROKEN: bool = False
 
 
 def process_bed(bed_file: str) -> REGION_DICT:
@@ -56,28 +75,7 @@ def region_of_interest(regions: REGION_DICT, chrom: str, pos: int) -> bool:
     if chrom not in regions:
         return False
 
-    for start, end in regions[chrom]:
-        if start <= pos <= end:
-            return True
-    return False
-
-
-def extract_csq(csq_contents: str) -> list[dict]:
-    """Handle extraction of the CSQ entries."""
-
-    # allow for no CSQ data, i.e. splice variant
-    if not csq_contents:
-        return []
-
-    # iterate over all consequences, and make each into a dict
-    txc_dicts = [dict(zip(CSQ_STRING, each_csq.split('|'), strict=True)) for each_csq in csq_contents.split(',')]
-
-    # update this String to be either a float, or missing
-    for each_dict in txc_dicts:
-        am_path = each_dict.get('am_pathogenicity')
-        each_dict['am_pathogenicity'] = float(am_path) if am_path else ''
-
-    return txc_dicts
+    return any(start <= pos <= end for start, end in regions[chrom])
 
 
 def get_non_ref_samples(variant: 'cyvcf2.Variant', samples: list[str]) -> tuple[set[str], set[str]]:
@@ -100,7 +98,7 @@ def get_non_ref_samples(variant: 'cyvcf2.Variant', samples: list[str]) -> tuple[
     return het_samples, hom_samples
 
 
-def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[int, str]]:
+def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[int, str]]:  # noqa: C901, PLR0912
     """
     read phase data from this variant
 
@@ -115,7 +113,7 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
         var (cyvcf2.Variant):
     """
 
-    global PHASE_BROKEN
+    global PHASE_BROKEN  # noqa: PLW0603
 
     phased_dict: dict[str, dict[int, str]] = defaultdict(dict)
 
@@ -180,30 +178,103 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
     return dict(phased_dict)
 
 
+def organise_csq(
+    var_details: dict[str, int | float | str | list[dict]],
+    id_lookup: dict[str, str],
+) -> bool:
+    """
+    read the transcript consequences, split into a list of details
+    integrate Revel and AlphaMissense where applicable
+
+    Args:
+        var_details:
+        id_lookup:
+    """
+
+    bcsq = var_details.pop('bcsq', None)
+
+    # no consequences?
+    if not isinstance(bcsq, str):
+        var_details['transcript_consequences'] = []
+        return False
+
+    # get and split revel data
+    revel_dict = {}
+    if (revel := var_details.pop('revel', None)) and isinstance(revel, str):
+        score, transcripts = revel.split('~')
+        for transcript in transcripts.split(','):
+            revel_dict = {transcript: score}
+
+    am_dict: dict[str, dict[str, str | float]] = {}
+    if var_details.get('am_class', '.') != '.':
+        am_dict[var_details.pop('am_transcript')] = {
+            'class': var_details.pop('am_class'),
+            'score': var_details.pop('am_score'),
+        }
+    else:
+        del var_details['am_transcript']
+        del var_details['am_score']
+
+    consequential = False
+    consequences = []
+
+    for txcsq in bcsq.split(','):
+        elements = txcsq.split('|')
+
+        # not zipping as Strict, sometimes the consequence is truncated
+        txcsq_dict = dict(zip(CSQ_STRING, elements, strict=False))
+        if txcsq_dict['gene'] not in id_lookup:
+            continue
+
+        txcsq_dict['ensg'] = id_lookup[txcsq_dict['gene']]
+
+        if any(each_csq in CRITICAL_CSQ_DEFAULT for each_csq in txcsq_dict['consequence'].split('&')):
+            consequential = True
+
+        # integrate REVEL if appropriate
+        if score := revel_dict.get(txcsq_dict['transcript']):
+            txcsq_dict['revel'] = score
+
+        # integrate alphamissense if appropriate
+        if txcsq_dict['transcript'] in am_dict:
+            txcsq_dict.update(**am_dict[txcsq_dict['transcript']])
+
+        consequences.append(txcsq_dict)
+
+    var_details['transcript_consequences'] = consequences
+
+    return consequential
+
+
 def create_small_variant(
     var: 'cyvcf2.Variant',
     samples: list[str],
+    id_lookup: dict[str, str],
 ) -> models.VariantAf | None:
     """Takes a small variant and creates a Model from it."""
 
     coordinates = models.Coordinates(chrom=var.CHROM.replace('chr', ''), pos=var.POS, ref=var.REF, alt=var.ALT[0])
-    info: dict[str, str | int | float] = {x.lower(): y for x, y in var.INFO} | {'var_link': coordinates.string_format}
+
+    info: dict[str, str | int | float | list[dict]] = {x.lower(): y for x, y in var.INFO}
+
+    clinvar_path = info.get('clinical_significance') == PATHOGENIC
+
+    consequential = organise_csq(info, id_lookup)
+
+    if not (clinvar_path or consequential):
+        return None
 
     het_samples, hom_samples = get_non_ref_samples(variant=var, samples=samples)
 
-    # overwrite with true booleans
-    for cat in CATEGORIES:
-        info[cat] = info.get(cat, 0) == 1
-
     phased = get_phase_data(samples, var)
 
-    # only keep these where the sample has a variant - the majority of samples have empty data, and we don't use it
-    # if we require depths/ratios/etc. for WT samples, revisit this
-    # hopefully a solution to the memory explosion in large cohorts
-    transcript_consequences = extract_csq(csq_contents=info.pop('csq', ''))
+    transcript_consequences = info.pop('transcript_consequences')
 
     return models.VariantAf(
+        gene=transcript_consequences[0]['ensg'],
         coordinates=coordinates,
+        clinvar_path=clinvar_path,
+        high_impact=consequential,
         info=info,
         het_samples=het_samples,
         hom_samples=hom_samples,
@@ -212,7 +283,10 @@ def create_small_variant(
     )
 
 
-def gather_gene_dict_from_vcf(vcf_path: str) -> dict[str, list[models.VariantAf]]:
+def gather_gene_dict_from_vcf(
+    vcf_path: str,
+    id_lookup: dict[str, str],
+) -> dict[str, list[models.VariantAf]]:
     """
     takes a cyvcf2.VCFReader instance, and a specified chromosome
     iterates over all variants in the region, and builds a lookup
@@ -233,6 +307,7 @@ def gather_gene_dict_from_vcf(vcf_path: str) -> dict[str, list[models.VariantAf]
 
     # a dict to allow lookup of variants on this whole chromosome
     variant_count = 0
+    skipped_variant_count = 0
     contig_dict = defaultdict(list)
 
     variant_source = cyvcf2.VCF(vcf_path)
@@ -240,13 +315,24 @@ def gather_gene_dict_from_vcf(vcf_path: str) -> dict[str, list[models.VariantAf]
     # iterate over all variants on this contig and store by unique key
     # if contig has no variants, prints an error and returns []
     for variant_row in variant_source:
-        variant = create_small_variant(var=variant_row, samples=variant_source.samples)
+        variant = create_small_variant(var=variant_row, samples=variant_source.samples, id_lookup=id_lookup)
+        if variant is None:
+            skipped_variant_count += 1
+            continue
+
         # update the variant count
         variant_count += 1
         # update the gene index dictionary
-        contig_dict[variant.info['gene_id']].append(variant)
+        contig_dict[variant.gene].append(variant)
 
-    logger.info(f'VCF {vcf_path} contained {variant_count} variants, in {len(contig_dict)} genes')
+    logger.info(
+        f"""
+        VCF {vcf_path}:
+        \t{variant_count} selected variants
+        \t{skipped_variant_count} skipped variants
+        \tin {len(contig_dict)} genes
+        """
+    )
 
     return dict(contig_dict)
 
@@ -268,8 +354,6 @@ def find_comp_hets(var_list: list[models.VariantAf], pedigree: PedigreeParser) -
 
     # use combinations_with_replacement to find all gene pairs
     for var_1, var_2 in combinations_with_replacement(var_list, 2):
-        assert var_1.coordinates.chrom == var_2.coordinates.chrom
-
         if (var_1.coordinates == var_2.coordinates) or var_1.coordinates.chrom in NON_HOM_CHROM:
             continue
 
