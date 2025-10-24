@@ -25,6 +25,8 @@ dependencies=[
     'hail',
     'loguru',
     'mendelbrot',
+    'pydantic',
+    'toml',
 ]
 
 [project.urls]

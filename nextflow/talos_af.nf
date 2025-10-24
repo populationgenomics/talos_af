@@ -3,14 +3,19 @@
 nextflow.enable.dsl=2
 
 include { AnnotateCsq } from './modules/AnnotateCsq/main'
-include { AnnotateGnomadAfs } from './modules/AnnotateGnomadAfs/main'
+include { AnnotateWithEchtvar } from './modules/AnnotateWithEchtvar/main'
 include { AnnotatedVcfToHt } from './modules/AnnotatedVcfToHt/main'
+include { ApplyMoiFiltering } from './modules/ApplyMoiFiltering/main'
 include { CombineAnnotationsAndFilterMt } from './modules/CombineAnnotationsAndFilterMt/main'
+include { EncodeAlphaMissense } from './modules/EncodeAlphaMissense/main'
+include { EncodeClinvar } from './modules/EncodeClinvar/main'
+include { EncodeRevel } from './modules/EncodeRevel/main'
 include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
 include { MakeSitesOnlyVcf } from './modules/MakeSitesOnlyVcf/main'
-include { ParseAlphaMissenseIntoHt } from './modules/ParseAlphaMissenseIntoHt/main'
+include { ParseAlphaMissense } from './modules/ParseAlphaMissense/main'
+include { ParseClinvar } from './modules/ParseClinvar/main'
+include { ParseRevel } from './modules/ParseRevel/main'
 include { ParseGff3IntoBed } from './modules/ParseGff3IntoBed/main'
-include { ParseRevelIntoHt } from './modules/ParseRevelIntoHt/main'
 include { PrepareAcmgSpec } from './modules/PrepareAcmgSpec/main'
 
 workflow {
@@ -23,10 +28,11 @@ workflow {
 
     ch_input_vcf = channel.fromPath(params.input_vcf, checkIfExists: true)
     ch_input_vcf_index = channel.fromPath("${params.input_vcf}.tbi", checkIfExists: true)
+    ch_pedigree = channel.fromPath(params.pedigree, checkIfExists: true)
+    ch_config = channel.fromPath(params.config, checkIfExists: true)
 
     // read the echtvar reference file as an input channel
     ch_gnomad_echtvar = channel.fromPath(params.echtvar, checkIfExists: true)
-    ch_clinvar_tar = channel.fromPath(params.clinvar, checkIfExists: true)
 
     PrepareAcmgSpec(
         ch_acmg_spec,
@@ -38,36 +44,64 @@ workflow {
         ch_gff3,
     )
 
-    // generate the AlphaMissense HT if it doesn't already exist
-    if (file(params.alphamissense_ht).exists()) {
-        ch_alphamissense_table = channel.fromPath(params.alphamissense_ht)
+    // generate the AlphaMissense zip if it doesn't already exist
+    if (file(params.alphamissense_echtvar).exists()) {
+        ch_alphamissense_echtvar = channel.fromPath(params.alphamissense_echtvar)
     }
     else {
-    	ch_alphamissense_input = channel.fromPath(
-    		params.alphamissense_input,
-    		checkIfExists: true,
-		)
-        ParseAlphaMissenseIntoHt(
+    	ch_alphamissense_input = channel.fromPath(params.alphamissense_input, checkIfExists: true)
+		ch_am_header = channel.fromPath(params.am_header, checkIfExists: true)
+		ch_am_config = channel.fromPath(params.am_config, checkIfExists: true)
+        ParseAlphaMissense(
             ch_alphamissense_input,
             ParseGff3IntoBed.out,
+            ch_am_header,
         )
-        ch_alphamissense_table = ParseAlphaMissenseIntoHt.out.ht
+        EncodeAlphaMissense(
+            ParseAlphaMissense.out,
+            ch_am_config,
+        )
+        ch_alphamissense_echtvar = EncodeAlphaMissense.out
     }
 
-    // generate the REVEL HT if it doesn't already exist
-    if (file(params.revel_ht).exists()) {
-        ch_revel_table = channel.fromPath(params.revel_ht)
+    // generate the Clinvar zip if it doesn't already exist
+    if (file(params.clinvar_echtvar).exists()) {
+        ch_clinvar_echtvar = channel.fromPath(params.clinvar_echtvar)
     }
     else {
-    	ch_revel_input = channel.fromPath(
-    		params.revel_input,
-    		checkIfExists: true,
-		)
-		ParseRevelIntoHt(
+        ch_clinvar_tar = channel.fromPath(params.clinvar, checkIfExists: true)
+		ch_clinvar_header = channel.fromPath(params.clinvar_header, checkIfExists: true)
+		ch_clinvar_config = channel.fromPath(params.clinvar_config, checkIfExists: true)
+        ParseClinvar(
+            ch_clinvar_tar,
+            ParseGff3IntoBed.out,
+            ch_clinvar_header,
+        )
+        EncodeClinvar(
+            ParseClinvar.out,
+            ch_clinvar_config,
+        )
+        ch_clinvar_echtvar = EncodeClinvar.out
+    }
+
+    // generate the REVEL zip if it doesn't already exist
+    if (file(params.revel_echtvar).exists()) {
+        ch_revel_echtvar = channel.fromPath(params.revel_echtvar)
+    }
+    else {
+    	ch_revel_input = channel.fromPath(params.revel_input, checkIfExists: true)
+		ch_revel_header = channel.fromPath(params.revel_header, checkIfExists: true)
+		ch_revel_config = channel.fromPath(params.revel_config, checkIfExists: true)
+        ParseRevel(
             ch_revel_input,
             ParseGff3IntoBed.out,
+            ch_revel_header,
         )
-        ch_revel_table = ParseRevelIntoHt.out.ht
+        EncodeRevel(
+            ParseRevel.out,
+            ch_revel_config,
+        )
+        ch_revel_echtvar = EncodeRevel.out
     }
 
     FilterVcfToBed(
@@ -77,36 +111,48 @@ workflow {
         ch_ref_genome,
     )
 
-    // create a sites-only version of this VCF, just to pass less data around when annotating
-    MakeSitesOnlyVcf(
+    AnnotateWithEchtvar(
         FilterVcfToBed.out,
-    )
-
-    AnnotateGnomadAfs(
-        MakeSitesOnlyVcf.out,
         ch_gnomad_echtvar,
+        ch_revel_echtvar,
+        ch_alphamissense_echtvar,
+        ch_clinvar_echtvar,
     )
 
     // annotate transcript consequences with bcftools csq
     AnnotateCsq(
-        AnnotateGnomadAfs.out,
+        AnnotateWithEchtvar.out,
         ch_gff3,
         ch_ref_genome,
     )
 
-    // reformat the annotations in the VCF, retain as a Hail Table
-    AnnotatedVcfToHt(
-        AnnotateCsq.out,
-        ch_alphamissense_table,
-        ch_revel_table,
-        PrepareAcmgSpec.out,
-    )
-
-    // re-integrate the variants and the annotations, then apply filtering rules
-    CombineAnnotationsAndFilterMt(
-        FilterVcfToBed.out,
-        AnnotatedVcfToHt.out,
-        ch_clinvar_tar,
-        PrepareAcmgSpec.out,
-    )
+//     // create a sites-only version of this VCF, just to pass less data around when annotating
+//     MakeSitesOnlyVcf(
+//         FilterVcfToBed.out,
+//     )
+//
+//
+//
+//     // reformat the annotations in the VCF, retain as a Hail Table
+//     AnnotatedVcfToHt(
+//         AnnotateCsq.out,
+//         ch_alphamissense_table,
+//         ch_revel_table,
+//         PrepareAcmgSpec.out,
+//     )
+//
+//     // re-integrate the variants and the annotations, then apply filtering rules
+//     CombineAnnotationsAndFilterMt(
+//         FilterVcfToBed.out,
+//         AnnotatedVcfToHt.out,
+//         ch_clinvar_tar,
+//         PrepareAcmgSpec.out,
+//     )
+//     // apply per-gene rules
+//     ApplyMoiFiltering(
+//         CombineAnnotationsAndFilterMt.out,
+//         ch_pedigree,
+//         PrepareAcmgSpec.out,
+//         ch_config,
+//     )
 }

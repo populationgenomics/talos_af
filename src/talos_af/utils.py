@@ -57,7 +57,8 @@ def region_of_interest(regions: REGION_DICT, chrom: str, pos: int) -> bool:
         return False
 
     for start, end in regions[chrom]:
-        return start <= pos <= end
+        if start <= pos <= end:
+            return True
     return False
 
 

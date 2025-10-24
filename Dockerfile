@@ -21,6 +21,7 @@ RUN apt update && apt install -y --no-install-recommends \
 FROM base AS bcftools_compiler
 
 ARG BCFTOOLS_VERSION=1.22
+ARG HTSLIB_VERSION=1.22.1
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
         gcc \
@@ -31,16 +32,23 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         make \
         zlib1g-dev && \
     wget https://github.com/samtools/bcftools/releases/download/${BCFTOOLS_VERSION}/bcftools-${BCFTOOLS_VERSION}.tar.bz2 && \
+    wget https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htslib-${HTSLIB_VERSION}.tar.bz2 && \
     tar -xf bcftools-${BCFTOOLS_VERSION}.tar.bz2 && \
+    tar -xf htslib-${HTSLIB_VERSION}.tar.bz2 && \
     cd bcftools-${BCFTOOLS_VERSION} && \
     ./configure --enable-libcurl --enable-s3 --enable-gcs && \
     make && \
     strip bcftools plugins/*.so && \
-    make DESTDIR=/bcftools_install install
+    make DESTDIR=/bcftools_install install && \
+    cd ../htslib-${HTSLIB_VERSION} && \
+    ./configure --prefix=/bcftools_install && \
+    make && \
+    make install
 
 FROM base AS base_bcftools
 
 COPY --from=bcftools_compiler /bcftools_install/usr/local/bin/* /usr/local/bin/
+COPY --from=bcftools_compiler /bcftools_install/bin/* /usr/local/bin/
 COPY --from=bcftools_compiler /bcftools_install/usr/local/libexec/bcftools/* /usr/local/libexec/bcftools/
 
 FROM base_bcftools AS base_bcftools_echtvar
