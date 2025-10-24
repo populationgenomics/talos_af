@@ -212,8 +212,8 @@ def organise_csq(
             'score': var_details.pop('am_score'),
         }
     else:
-        del var_details['am_transcript']
-        del var_details['am_score']
+        var_details.pop('am_transcript', None)
+        var_details.pop('am_score', None)
 
     consequential = False
     consequences = []
