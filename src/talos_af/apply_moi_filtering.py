@@ -71,7 +71,7 @@ def main(vcf_path: str, acmg_spec_path: str, pedigree_path: str, output_path: st
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--vcf', help='Labelled and annotated VCF file', required=True)
-    parser.add_argument('--acmg_spec', help=r'Specification of each gene\s interpretation rules', required=True)
+    parser.add_argument('--acmg_spec', help="Specification of each gene's interpretation rules", required=True)
     parser.add_argument('--pedigree', help='Pedigree for the callset (required for sex)', required=True)
     parser.add_argument('--output', help='Path to write the output results to', required=True)
     args = parser.parse_args()
