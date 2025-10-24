@@ -203,7 +203,7 @@ def organise_csq(
     if (revel := var_details.pop('revel', None)) and isinstance(revel, str):
         score, transcripts = revel.split('~')
         for transcript in transcripts.split(','):
-            revel_dict = {transcript: score}
+            revel_dict[transcript] = score
 
     am_dict: dict[str, dict[str, str | float]] = {}
     if var_details.get('am_class', '.') != '.':
