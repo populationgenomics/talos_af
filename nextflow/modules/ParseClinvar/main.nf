@@ -9,7 +9,7 @@ process ParseClinvar {
         path header
 
     output:
-        path "filtered_clinvar.vcf.bgz"
+        path "filtered_clinvar.vcf.gz"
 
     script:
         """
@@ -18,8 +18,7 @@ process ParseClinvar {
         python -m talos_af.scripts.process_clinvar \
             --input clinvarbitration_data/clinvar_decisions.tsv \
             --regions ${bed} \
-            --header ${header} |
-        bgzip -c > filtered_clinvar.vcf.bgz
-        tabix filtered_clinvar.vcf.bgz
+            --header ${header} \
+            --output filtered_clinvar.vcf.gz
         """
 }
