@@ -9,7 +9,6 @@ process ApplyMoiFiltering {
         path spec
         path config
 
-    // read the ACMG specification, and generate a JSON summary
     output:
         path "${params.cohort}_results.json"
 

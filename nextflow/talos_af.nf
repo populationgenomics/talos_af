@@ -4,18 +4,15 @@ nextflow.enable.dsl=2
 
 include { AnnotateCsq } from './modules/AnnotateCsq/main'
 include { AnnotateWithEchtvar } from './modules/AnnotateWithEchtvar/main'
-include { AnnotatedVcfToHt } from './modules/AnnotatedVcfToHt/main'
 include { ApplyMoiFiltering } from './modules/ApplyMoiFiltering/main'
-include { CombineAnnotationsAndFilterMt } from './modules/CombineAnnotationsAndFilterMt/main'
 include { EncodeAlphaMissense } from './modules/EncodeAlphaMissense/main'
 include { EncodeClinvar } from './modules/EncodeClinvar/main'
 include { EncodeRevel } from './modules/EncodeRevel/main'
 include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
-include { MakeSitesOnlyVcf } from './modules/MakeSitesOnlyVcf/main'
 include { ParseAlphaMissense } from './modules/ParseAlphaMissense/main'
 include { ParseClinvar } from './modules/ParseClinvar/main'
-include { ParseRevel } from './modules/ParseRevel/main'
 include { ParseGff3IntoBed } from './modules/ParseGff3IntoBed/main'
+include { ParseRevel } from './modules/ParseRevel/main'
 include { PrepareAcmgSpec } from './modules/PrepareAcmgSpec/main'
 
 workflow {
@@ -126,33 +123,11 @@ workflow {
         ch_ref_genome,
     )
 
-//     // create a sites-only version of this VCF, just to pass less data around when annotating
-//     MakeSitesOnlyVcf(
-//         FilterVcfToBed.out,
-//     )
-//
-//
-//
-//     // reformat the annotations in the VCF, retain as a Hail Table
-//     AnnotatedVcfToHt(
-//         AnnotateCsq.out,
-//         ch_alphamissense_table,
-//         ch_revel_table,
-//         PrepareAcmgSpec.out,
-//     )
-//
-//     // re-integrate the variants and the annotations, then apply filtering rules
-//     CombineAnnotationsAndFilterMt(
-//         FilterVcfToBed.out,
-//         AnnotatedVcfToHt.out,
-//         ch_clinvar_tar,
-//         PrepareAcmgSpec.out,
-//     )
-//     // apply per-gene rules
-//     ApplyMoiFiltering(
-//         CombineAnnotationsAndFilterMt.out,
-//         ch_pedigree,
-//         PrepareAcmgSpec.out,
-//         ch_config,
-//     )
+    // apply per-gene rules
+    ApplyMoiFiltering(
+        AnnotateCsq.out,
+        ch_pedigree,
+        PrepareAcmgSpec.out,
+        ch_config,
+    )
 }
