@@ -120,7 +120,7 @@ start_download "https://ftp.ensembl.org/pub/release-115/gff3/homo_sapiens/Homo_s
 # latest clinvarbitration data
 CLINVAR="clinvarbitration.tar.gz"
 start_download \
-  "https://zenodo.org/records/17393849/files/clinvarbitration_Oct_2025_clinvar_decisions.release.tar.gz?download=1" \
+  "https://zenodo.org/records/17577130/files/ClinvArbitration_Nov_2025_clinvar_decisions.release.tar.gz?download=1" \
   "${CLINVAR}"
 
 # MANE gene data

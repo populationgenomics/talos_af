@@ -55,6 +55,15 @@ def main(vcf_path: str, acmg_spec_path: str, pedigree_path: str, output_path: st
         moi_to_use = acmg_spec[gene_id]['moi']
         for variant in variants:
             if results := moi_filter_dict[moi_to_use].run(variant, comp_het_dict):
+                # apply specific rules if required
+                if acmg_spec[gene_id]['reportable'] == 'specific':
+                    satisfies_conditions = utils_af.apply_gene_specific_rules(
+                        rule=acmg_spec[gene_id]['specific_type'],
+                        variant=variant,
+                    )
+                    if not satisfies_conditions:
+                        continue
+
                 selected_variants[variant.coordinates.string_format] = variant
                 for sample, instances in results.items():
                     sample_results[sample].extend(instances)

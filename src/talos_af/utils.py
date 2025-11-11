@@ -1,5 +1,7 @@
+import re
 from collections import defaultdict
 from itertools import combinations_with_replacement
+from typing import Any
 
 import cyvcf2
 from loguru import logger
@@ -45,6 +47,32 @@ CSQ_STRING = [
     'dna_change',
 ]
 PHASE_BROKEN: bool = False
+
+TRUNCATING = {'nonsense', 'frameshift'}
+
+IUPAC_LOOKUP = {
+    'A': 'Ala',
+    'C': 'Cys',
+    'D': 'Asp',
+    'E': 'Glu',
+    'F': 'Phe',
+    'G': 'Gly',
+    'H': 'His',
+    'I': 'Ile',
+    'K': 'Lys',
+    'L': 'Leu',
+    'M': 'Met',
+    'N': 'Asn',
+    'P': 'Pro',
+    'Q': 'Gln',
+    'R': 'Arg',
+    'S': 'Ser',
+    'T': 'Thr',
+    'V': 'Val',
+    'W': 'Trp',
+    'Y': 'Tyr',
+}
+TYPE_RE = re.compile(r'p\.(?P<ref>\D)(?P<codon>\d+)(?P<alt>\D)')
 
 
 def process_bed(bed_file: str) -> REGION_DICT:
@@ -179,16 +207,11 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
 
 
 def organise_csq(
-    var_details: dict[str, int | float | str | list[dict]],
+    var_details: dict[str, Any],
     id_lookup: dict[str, str],
 ) -> bool:
     """
-    read the transcript consequences, split into a list of details
-    integrate Revel and AlphaMissense where applicable
-
-    Args:
-        var_details:
-        id_lookup:
+    Read the transcript consequences, split into a list of details, integrate Revel and AlphaMissense where applicable.
     """
 
     bcsq = var_details.pop('bcsq', None)
@@ -207,9 +230,12 @@ def organise_csq(
 
     am_dict: dict[str, dict[str, str | float]] = {}
     if var_details.get('am_class', '.') != '.':
-        am_dict[var_details.pop('am_transcript')] = {
-            'class': var_details.pop('am_class'),
-            'score': var_details.pop('am_score'),
+        transcript = str(var_details.pop('am_transcript'))
+        am_class = str(var_details.pop('am_class'))
+        am_score = float(var_details.pop('am_score'))
+        am_dict[transcript] = {
+            'class': am_class,
+            'score': am_score,
         }
     else:
         var_details.pop('am_transcript', None)
@@ -268,7 +294,8 @@ def create_small_variant(
 
     phased = get_phase_data(samples, var)
 
-    transcript_consequences = info.pop('transcript_consequences')
+    # todo tidy up some typing here
+    transcript_consequences: list[dict[str, Any]] = info.pop('transcript_consequences')
 
     return models.VariantAf(
         gene=transcript_consequences[0]['ensg'],
@@ -376,3 +403,41 @@ def find_comp_hets(var_list: list[models.VariantAf], pedigree: PedigreeParser) -
                 comp_het_results[sample].setdefault(var_2.coordinates.string_format, []).append(var_1)
 
     return comp_het_results
+
+
+def is_variant_truncating(variant: models.VariantAf) -> bool:
+    """Check if any of the transcript consequences for this variant are truncating."""
+    for each_txc in variant.transcript_consequences:
+        # split out separate terms so we can compare separately
+        csq_set = each_txc['consequence'].split('&')
+        if any(truncating_term in csq_set for truncating_term in TRUNCATING):
+            return True
+    return False
+
+
+def is_variant_exact_p(change: str, variant: models.VariantAf) -> bool:
+    """Check if any of the phased transcript consequences for this variant are exact protein changes."""
+    match = re.match(TYPE_RE, change)
+    codon = match.group('codon')
+    ref = match.group('ref')
+    alt = match.group('alt')
+    samtools_format_string = f'{codon}{ref}>{codon}{alt}'
+
+    return any(each_txc['amino_acid_change'] == samtools_format_string for each_txc in variant.transcript_consequences)
+
+
+def apply_gene_specific_rules(
+    rule: str,
+    variant: models.VariantAf,
+) -> bool:
+    """
+    Take the initial list of variants we selected, and apply more specific rules to back-filter.
+    This is a bit janky and manual for now. To be reviewed.
+    """
+    if rule == 'truncating':
+        return is_variant_truncating(variant)
+
+    if rule.startswith('p.'):
+        return is_variant_exact_p(change=rule, variant=variant)
+
+    raise NotImplementedError('Not sure what the rule should be here.')

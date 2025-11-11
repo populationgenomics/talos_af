@@ -254,6 +254,10 @@ class XL(BaseMoi):
 
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.hom_samples | principal.het_samples:
-            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
+            classifications[sample_id].append(
+                ReportableVariant(
+                    var_id=principal.coordinates.string_format,
+                )
+            )
 
         return classifications
