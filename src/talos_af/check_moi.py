@@ -161,7 +161,7 @@ class BaseMoi(abc.ABC):
         for phase_set, genotype in variant_1.phased[sample_id].items():
             # this phase set doesn't exist in both variants - can't be phased
             if phase_set not in (v2p := variant_2.phased[sample_id]):
-                return True
+                continue
             return genotype != v2p
 
         return True
