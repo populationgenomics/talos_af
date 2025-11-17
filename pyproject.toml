@@ -38,6 +38,9 @@ dev = [
     'pytest',
     'ruff',
 ]
+cpg = [
+    'cpg-flow'
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/talos_af"]

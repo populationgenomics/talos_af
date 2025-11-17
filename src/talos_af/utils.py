@@ -416,7 +416,10 @@ def is_variant_truncating(variant: models.VariantAf) -> bool:
 
 
 def is_variant_exact_p(change: str, variant: models.VariantAf) -> bool:
-    """Check if any of the phased transcript consequences for this variant are exact protein changes."""
+    """
+    Check if any of the phased transcript consequences for this variant are exact protein changes.
+    Because I'm using SamTools for the annotation I've got to revert the schema changes to that AA change notation.
+    """
     match = re.match(TYPE_RE, change)
     codon = match.group('codon')
     ref = match.group('ref')
