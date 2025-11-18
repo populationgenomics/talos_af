@@ -252,7 +252,8 @@ def organise_csq(
         if txcsq_dict['gene'] not in id_lookup:
             continue
 
-        txcsq_dict['ensg'] = id_lookup[txcsq_dict['gene']]
+        gene_str = str(txcsq_dict['gene'])
+        txcsq_dict['ensg'] = id_lookup[gene_str]
 
         if any(each_csq in CRITICAL_CSQ_DEFAULT for each_csq in txcsq_dict['consequence'].split('&')):
             consequential = True
@@ -263,7 +264,7 @@ def organise_csq(
 
         # integrate alphamissense if appropriate
         if txcsq_dict['transcript'] in am_dict:
-            txcsq_dict.update(**am_dict[txcsq_dict['transcript']])
+            txcsq_dict.update(**am_dict[txcsq_dict['transcript']])  # type: ignore[arg-type]
 
         consequences.append(txcsq_dict)
 
@@ -281,7 +282,8 @@ def create_small_variant(
 
     coordinates = models.Coordinates(chrom=var.CHROM.replace('chr', ''), pos=var.POS, ref=var.REF, alt=var.ALT[0])
 
-    info: dict[str, str | int | float | list[dict]] = {x.lower(): y for x, y in var.INFO}
+    # this is so flexible it's basically useless
+    info: dict[str, Any] = {x.lower(): y for x, y in var.INFO}
 
     clinvar_path = info.get('clinical_significance') == PATHOGENIC
 
@@ -295,7 +297,7 @@ def create_small_variant(
     phased = get_phase_data(samples, var)
 
     # todo tidy up some typing here
-    transcript_consequences: list[dict[str, Any]] = info.pop('transcript_consequences')
+    transcript_consequences: list[dict[str, str | int | float]] = info.pop('transcript_consequences')
 
     return models.VariantAf(
         gene=transcript_consequences[0]['ensg'],

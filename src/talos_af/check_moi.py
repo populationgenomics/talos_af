@@ -180,7 +180,7 @@ class AD(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,  # noqa: ARG002
+        comp_het: utils_af.CompHetDict,
     ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
@@ -243,7 +243,7 @@ class XL(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,  # noqa: ARG002
+        comp_het: utils_af.CompHetDict,
     ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 

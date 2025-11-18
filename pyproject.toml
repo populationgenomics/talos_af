@@ -79,6 +79,7 @@ ignore = [
     "ANN201", # Missing return type annotation for public function
     "ANN204", # Missing type annotation for special method `__init__`
     "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "ARG002", #  Unused method argument
     "COM812", # Trailing comma prohibited
     "G004", # Logging statement uses f-string
     "Q000", # Single quotes found but double quotes preferred
@@ -86,7 +87,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+section-order = ["future", "standard-library", "third-party", "cpg", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+cpg = ["metamist", "cpg_flow", "cpg_utils"]
 
 [tool.ruff.lint.per-file-ignores]
 
