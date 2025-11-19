@@ -27,3 +27,9 @@ clinvar_dominant_gnomad_max_af = 0.00005
 # callset_* filters only apply to variants with a callset AC > min_callset_ac_to_filter.
 clinvar_callset_max_af = 0.05
 clinvar_dominant_callset_max_af = 0.05
+
+[workflow]
+use_this_mt = false
+sequencing_type = 'genome'
+input_cohorts = []
+
