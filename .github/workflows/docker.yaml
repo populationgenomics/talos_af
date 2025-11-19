@@ -40,8 +40,6 @@ jobs:
       CLOUDSDK_CORE_DISABLE_PROMPTS: 1
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: 'true'
 
       - id: 'google-cloud-auth'
         name: 'Authenticate to Google Cloud'
