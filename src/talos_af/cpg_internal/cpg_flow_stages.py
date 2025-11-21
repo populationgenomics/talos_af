@@ -258,7 +258,7 @@ class ExportVcfFromMt(stage.DatasetStage):
 
         input_mt = utils_internal.query_for_latest_analysis(dataset=dataset.name, stage_name='AnnotateDataset')
 
-        bed_file = inputs.as_str(dataset, GenerateBedFromAcmg, 'bed')
+        bed_file = inputs.as_str(workflow.get_multicohort(), GenerateBedFromAcmg, 'bed')
 
         job = batch_instance.new_bash_job(f'VCF from MT: {dataset.name}', attributes=self.get_job_attrs(dataset))
         job.image(config.config_retrieve(['workflow', 'driver_image']))
