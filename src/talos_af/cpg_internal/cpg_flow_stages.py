@@ -318,6 +318,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         clinvar_zip = batch_instance.read_input(inputs.as_str(multicohort, GenerateClinvarZip, 'zip'))
         revel_zip = batch_instance.read_input(inputs.as_str(multicohort, GenerateRevelZip, 'zip'))
 
+        mane = batch_instance.read_input(config.config_retrieve(['references', 'mane_summary']))
+
         vcf_path = inputs.as_str(dataset, ExportVcfFromMt, 'vcf')
         vcf_with_index = batch_instance.read_input_group(
             vcf=vcf_path,
@@ -336,6 +338,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
+                --mane_input {mane} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\
                 --clinvar_echtvar {clinvar_zip} \\
