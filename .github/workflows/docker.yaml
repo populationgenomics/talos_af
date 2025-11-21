@@ -65,7 +65,7 @@ jobs:
           file: src/talos_af/cpg_internal/CPG_Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKER_DEV }}/${{ env.IMAGE_NAME }}:${{ github.event.number} }}
+            ${{ env.DOCKER_DEV }}/${{ env.IMAGE_NAME }}:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.DOCKER_DEV }}/${{ env.IMAGE_NAME }},push-by-digest=false
