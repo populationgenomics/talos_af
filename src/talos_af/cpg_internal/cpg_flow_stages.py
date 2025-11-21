@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from operator import index
 
 from cpg_flow import stage, targets, workflow
 from cpg_flow.stage import StageInput, StageOutput
@@ -339,7 +338,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --acmg_spec {acmg_spec} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\
-                --clinvar_zip {clinvar_zip} \\
+                --clinvar_echtvar {clinvar_zip} \\
                 --alphamissense_echtvar {am_zip} \\
                 --cohort {dataset.name} \\
                 --ref_fa {ref_fa} \\
