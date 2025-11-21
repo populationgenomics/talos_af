@@ -57,7 +57,7 @@ jobs:
 
       - name: build
         run: |
-          docker build . -f Dockerfile --tag $IMAGE_NAME:${{ github.sha }}
+          docker build . -f src/talos_af/cpg_internal/CPG_Dockerfile --tag $IMAGE_NAME:${{ github.sha }}
 
       - name: Push Pull Request build
         if: ${{ github.event_name == 'pull_request' }}
@@ -105,7 +105,7 @@ jobs:
 
       - name: build
         run: |
-          docker build . -f Dockerfile --tag $IMAGE_NAME:${{ github.sha }}
+          docker build . -f src/talos_af/cpg_internal/CPG_Dockerfile --tag $IMAGE_NAME:${{ github.sha }}
 
       - name: Push to production
         run: |
