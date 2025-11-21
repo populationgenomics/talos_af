@@ -338,7 +338,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
 
         # copy the outputs back, in one smooooooth motion
         batch_instance.write_output(job.output, str(outputs['json']).removesuffix('_results.json'))
-        return job
+        return self.make_outputs(dataset, outputs, jobs=job)
 
 
 def main(dry_run: bool = False):
