@@ -337,7 +337,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job.storage('100Gi').memory('highmem').cpu(2)
 
         # copy the outputs back, in one smooooooth motion
-        batch_instance.write_output(job.output, str(outputs))
+        batch_instance.write_output(job.output, str(outputs['json']).removesuffix('_results.json'))
         return job
 
 
