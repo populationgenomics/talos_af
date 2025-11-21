@@ -321,8 +321,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job.command(
             f"""
             nextflow \
-                -c nextflow/nextflow.config \\
-                run nextflow/clinvarbitration.nf \\
+                -c nextflow/talos_af.config \\
+                run nextflow/talos_af.nf \\
                 --acmg_spec {acmg_spec} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\
