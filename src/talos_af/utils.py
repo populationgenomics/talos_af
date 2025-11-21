@@ -91,6 +91,8 @@ def process_bed(bed_file: str) -> REGION_DICT:
     bed_regions: dict[str, list[tuple[int, int]]] = defaultdict(list)
     with open(bed_file, encoding='utf-8') as handle:
         for line in handle:
+            if not line.rstrip():
+                continue
             llist = line.strip().split('\t')
             chrom = llist[0]
             start = int(llist[1])
