@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from operator import index
 
 from cpg_flow import stage, targets, workflow
 from cpg_flow.stage import StageInput, StageOutput
@@ -285,6 +286,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
             'json': output_folder / f'{dataset.name}_results.json',
             'vcf': output_folder / f'{dataset.name}_filtered.vcf.bgz',
             'tbi': output_folder / f'{dataset.name}_filtered.vcf.bgz.tbi',
+            'pedigree': output_folder / f'{dataset.name}.pedigree',
         }
 
         return {}
@@ -317,12 +319,23 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         clinvar_zip = batch_instance.read_input(inputs.as_str(multicohort, GenerateClinvarZip, 'zip'))
         revel_zip = batch_instance.read_input(inputs.as_str(multicohort, GenerateRevelZip, 'zip'))
 
+        vcf_path = inputs.as_str(dataset, ExportVcfFromMt, 'vcf')
+        vcf_with_index = batch_instance.read_input_group(
+            vcf=vcf_path,
+            index=f'{vcf_path}.tbi',
+        )['vcf']
+
+        pedigree = dataset.write_ped_file(out_path=outputs['pedigree'])
+
         # nextflow go brrrr
         job.command(
             f"""
             nextflow \
                 -c nextflow/talos_af.config \\
                 run nextflow/talos_af.nf \\
+                --config nextflow/inputs/config.toml \\
+                --pedigree {pedigree} \\
+                --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\
