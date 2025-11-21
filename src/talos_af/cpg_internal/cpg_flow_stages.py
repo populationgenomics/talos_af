@@ -71,9 +71,9 @@ class GenerateBedFromAcmg(stage.MultiCohortStage):
         job = batch_instance.new_bash_job(name='Parse GFF3 into BED', attributes=self.get_job_attrs(multicohort))
         job.image(config.config_retrieve(['workflow', 'driver_image']))
         job.command(f"""
-        python -m talos_af.scripts.process_gff3 \
-            --input {parsed_spec} \
-            --gff3 {local_gff3} \
+        python -m talos_af.scripts.process_gff3 \\
+            --input {parsed_spec} \\
+            --gff3 {local_gff3} \\
             --output {job.output}
         """)
         batch_instance.write_output(job.output, output['bed'])
@@ -116,9 +116,9 @@ class GenerateRevelZip(stage.MultiCohortStage):
 
         # convert decisions to a VCF, and region filter
         job.command(f"""
-            python -m talos_af.scripts.process_revel \
-                --input {job.output['raw.zip']} \
-                --regions {bed_local} \
+            python -m talos_af.scripts.process_revel \\
+                --input {job.output['raw.zip']} \\
+                --regions {bed_local} \\
                 --output filtered_revel.vcf.gz
             """)
 
@@ -167,9 +167,9 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
 
         # convert decisions to a VCF, and region filter
         job.command(f"""
-            python -m talos_af.scripts.process_alphamissense \
-                --input {job.output['raw.zip']} \
-                --regions {bed_local} \
+            python -m talos_af.scripts.process_alphamissense \\
+                --input {job.output['raw.zip']} \\
+                --regions {bed_local} \\
                 --output filtered_revel.vcf.gz
             """)
 
@@ -224,9 +224,9 @@ class GenerateClinvarZip(stage.MultiCohortStage):
         job.command(f"""
             tar --no-same-owner -zxf {job.output['tar.gz']}
 
-            python -m talos_af.scripts.process_clinvar \
-                --input clinvarbitration_data/clinvar_decisions.tsv \
-                --regions {bed_local} \
+            python -m talos_af.scripts.process_clinvar \\
+                --input clinvarbitration_data/clinvar_decisions.tsv \\
+                --regions {bed_local} \\
                 --output filtered_clinvar.vcf.gz
             """)
 
@@ -321,16 +321,16 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job.command(
             f"""
             nextflow \
-                -c nextflow/nextflow.config \
-                run nextflow/clinvarbitration.nf \
-                --acmg_spec {acmg_spec} \
-                --gnomad_echtvar {gnomad_zip} \
-                --revel_echtvar {revel_zip} \
-                --clinvar_zip {clinvar_zip} \
-                --alphamissense_echtvar {am_zip} \
-                --cohort {dataset.name} \
-                --ref_fa {ref_fa} \
-                --output_dir {job.output} \
+                -c nextflow/nextflow.config \\
+                run nextflow/clinvarbitration.nf \\
+                --acmg_spec {acmg_spec} \\
+                --gnomad_echtvar {gnomad_zip} \\
+                --revel_echtvar {revel_zip} \\
+                --clinvar_zip {clinvar_zip} \\
+                --alphamissense_echtvar {am_zip} \\
+                --cohort {dataset.name} \\
+                --ref_fa {ref_fa} \\
+                --output_dir {job.output} \\
                 --gff3 {gff3_localised}
             """,
         )
