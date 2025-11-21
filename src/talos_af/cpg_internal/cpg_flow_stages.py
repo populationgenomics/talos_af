@@ -101,6 +101,7 @@ class GenerateRevelZip(stage.MultiCohortStage):
         bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process Revel data')
+        job.image(config.config_retrieve(['workflow', 'driver_image']))
 
         job.declare_resource_group(
             output={
@@ -151,6 +152,7 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
         bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process AlphaMissense data')
+        job.image(config.config_retrieve(['workflow', 'driver_image']))
 
         job.declare_resource_group(
             output={
@@ -206,6 +208,7 @@ class GenerateClinvarZip(stage.MultiCohortStage):
         bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process ClinvArbitration data')
+        job.image(config.config_retrieve(['workflow', 'driver_image']))
 
         job.declare_resource_group(
             output={
@@ -262,6 +265,7 @@ class ExportVcfFromMt(stage.DatasetStage):
 
         job = batch_instance.new_bash_job(f'VCF from MT: {dataset.name}', attributes=self.get_job_attrs(dataset))
         job.image(config.config_retrieve(['workflow', 'driver_image']))
+
         job.declare_resource_group(output={'vcf.bgz': '{root}.vcf.bgz', 'vcf.bgz.tbi': '{root}.vcf.bgz.tbi'})
         job.command(f"""
             python -m talos_af.scripts.extract_vcf_from_mt \\
