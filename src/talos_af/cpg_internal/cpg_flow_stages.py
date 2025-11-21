@@ -62,7 +62,7 @@ class GenerateBedFromAcmg(stage.MultiCohortStage):
 
         output = self.expected_outputs(multicohort)
 
-        local_gff3 = batch_instance.read_input(config.config_retrieve(['references', 'mane_summary']))
+        local_gff3 = batch_instance.read_input(config.config_retrieve(['references', 'gff3']))
 
         parsed_spec = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec, 'json'))
 
