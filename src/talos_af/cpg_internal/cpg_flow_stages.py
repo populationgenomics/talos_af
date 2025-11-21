@@ -64,7 +64,7 @@ class GenerateBedFromAcmg(stage.MultiCohortStage):
 
         local_gff3 = batch_instance.read_input(config.config_retrieve(['references', 'mane_summary']))
 
-        parsed_spec = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec))
+        parsed_spec = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec, 'json'))
 
         batch_instance = hail_batch.get_batch()
 
@@ -98,7 +98,7 @@ class GenerateRevelZip(stage.MultiCohortStage):
         outputs = self.expected_outputs(multicohort)
         batch_instance = hail_batch.get_batch()
 
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg))
+        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process Revel data')
 
@@ -148,7 +148,7 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
         outputs = self.expected_outputs(multicohort)
         batch_instance = hail_batch.get_batch()
 
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg))
+        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process AlphaMissense data')
 
@@ -203,7 +203,7 @@ class GenerateClinvarZip(stage.MultiCohortStage):
 
         _id, dl = utils_af.get_latest_zenodo_file(config.config_retrieve(['references', 'clinvar_record']))
 
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg))
+        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process ClinvArbitration data')
 
@@ -258,7 +258,7 @@ class ExportVcfFromMt(stage.DatasetStage):
 
         input_mt = utils_internal.query_for_latest_analysis(dataset=dataset.name, stage_name='AnnotateDataset')
 
-        bed_file = inputs.as_str(dataset, GenerateBedFromAcmg)
+        bed_file = inputs.as_str(dataset, GenerateBedFromAcmg, 'bed')
 
         job = batch_instance.new_bash_job(f'VCF from MT: {dataset.name}', attributes=self.get_job_attrs(dataset))
         job.image(config.config_retrieve(['workflow', 'driver_image']))
