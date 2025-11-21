@@ -270,11 +270,9 @@ class ExportVcfFromMt(stage.DatasetStage):
         job.command(f"""
             python -m talos_af.scripts.extract_vcf_from_mt \\
             --input {input_mt} \\
-            --output {job.output} \\
+            --output {output} \\
             --bed {bed_file}
         """)
-
-        batch_instance.write_output(job.output, str(output['vcf']).removesuffix('.vcf.bgz'))
 
         return self.make_outputs(dataset, output, jobs=job)
 
