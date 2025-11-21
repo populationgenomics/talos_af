@@ -270,7 +270,7 @@ class ExportVcfFromMt(stage.DatasetStage):
         job.command(f"""
             python -m talos_af.scripts.extract_vcf_from_mt \\
             --input {input_mt} \\
-            --output {output} \\
+            --output {output['vcf']} \\
             --bed {bed_file}
         """)
 
