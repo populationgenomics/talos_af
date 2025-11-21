@@ -29,7 +29,7 @@ workflow {
     ch_config = channel.fromPath(params.config, checkIfExists: true)
 
     // read the echtvar reference file as an input channel
-    ch_gnomad_echtvar = channel.fromPath(params.echtvar, checkIfExists: true)
+    ch_gnomad_echtvar = channel.fromPath(params.gnomad_echtvar, checkIfExists: true)
 
     PrepareAcmgSpec(
         ch_acmg_spec,
@@ -47,17 +47,11 @@ workflow {
     }
     else {
     	ch_alphamissense_input = channel.fromPath(params.alphamissense_input, checkIfExists: true)
-		ch_am_header = channel.fromPath(params.am_header, checkIfExists: true)
-		ch_am_config = channel.fromPath(params.am_config, checkIfExists: true)
         ParseAlphaMissense(
             ch_alphamissense_input,
             ParseGff3IntoBed.out,
-            ch_am_header,
         )
-        EncodeAlphaMissense(
-            ParseAlphaMissense.out,
-            ch_am_config,
-        )
+        EncodeAlphaMissense(ParseAlphaMissense.out)
         ch_alphamissense_echtvar = EncodeAlphaMissense.out
     }
 
@@ -67,17 +61,11 @@ workflow {
     }
     else {
         ch_clinvar_tar = channel.fromPath(params.clinvar, checkIfExists: true)
-		ch_clinvar_header = channel.fromPath(params.clinvar_header, checkIfExists: true)
-		ch_clinvar_config = channel.fromPath(params.clinvar_config, checkIfExists: true)
         ParseClinvar(
             ch_clinvar_tar,
             ParseGff3IntoBed.out,
-            ch_clinvar_header,
         )
-        EncodeClinvar(
-            ParseClinvar.out,
-            ch_clinvar_config,
-        )
+        EncodeClinvar(ParseClinvar.out)
         ch_clinvar_echtvar = EncodeClinvar.out
     }
 
@@ -87,17 +75,11 @@ workflow {
     }
     else {
     	ch_revel_input = channel.fromPath(params.revel_input, checkIfExists: true)
-		ch_revel_header = channel.fromPath(params.revel_header, checkIfExists: true)
-		ch_revel_config = channel.fromPath(params.revel_config, checkIfExists: true)
         ParseRevel(
             ch_revel_input,
             ParseGff3IntoBed.out,
-            ch_revel_header,
         )
-        EncodeRevel(
-            ParseRevel.out,
-            ch_revel_config,
-        )
+        EncodeRevel(ParseRevel.out)
         ch_revel_echtvar = EncodeRevel.out
     }
 

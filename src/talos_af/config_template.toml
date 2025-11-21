@@ -33,3 +33,7 @@ use_this_mt = false
 sequencing_type = 'genome'
 input_cohorts = []
 
+[references]
+revel_zenodo = "https://zenodo.org/records/7072866/files/revel-v1.3_all_chromosomes.zip?download=1"
+alphamissense_zenodo = "https://zenodo.org/records/8208688/files/AlphaMissense_hg38.tsv.gz?download=1"
+clinvar_record = 17577130

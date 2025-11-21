@@ -11,14 +11,19 @@ trying this with https://zenodo.org/records/7072866/files/revel-v1.3_all_chromos
 import gzip
 import zipfile
 from argparse import ArgumentParser
+from importlib import resources
 
 from talos_af.utils import REGION_DICT, process_bed, region_of_interest
 
 
-def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, header: str, output: str):
+def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, output: str):
     """Read the compressed TSV input file, filter it by the acceptable regions, and write as a new minimised BED."""
 
-    with zipfile.ZipFile(input_file) as ziphandle, gzip.open(output, 'wt') as out, open(header) as head_in:
+    with (
+        zipfile.ZipFile(input_file) as ziphandle,
+        gzip.open(output, 'wt') as out,
+        resources.open_text('talos_af', 'revel_header.txt') as head_in,
+    ):
         for line in head_in:
             out.write(line)
 
@@ -44,16 +49,15 @@ def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, header: str, out
                     )
 
 
-def main(input_revel: str, regions: str, header: str, output: str):
+def main(input_revel: str, regions: str, output: str):
     bed_lookup = process_bed(bed_file=regions)
-    parse_and_filter_tsv(input_file=input_revel, regions=bed_lookup, header=header, output=output)
+    parse_and_filter_tsv(input_file=input_revel, regions=bed_lookup, output=output)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--input', help='input compressed revel csv')
     parser.add_argument('--regions', help='input bed file containing regions of interest')
-    parser.add_argument('--header', help='header file for the output VCF')
     parser.add_argument('--output', help='output path for the resulting VCF file')
     args = parser.parse_args()
-    main(input_revel=args.input, regions=args.regions, header=args.header, output=args.output)
+    main(input_revel=args.input, regions=args.regions, output=args.output)

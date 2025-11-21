@@ -52,7 +52,12 @@ packages = ["src/talos_af"]
 include_package_data = true
 
 [options.package_data]
-'talos_af'=  ['config_template.toml']
+'talos_af'=  [
+    'config_template.toml',
+    'am_header.txt',
+    'clinvar_header.txt',
+    'revel_header.txt',
+]
 
 [tool.mypy]
 ignore_missing_imports = true

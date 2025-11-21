@@ -1,9 +1,11 @@
 import re
 from collections import defaultdict
+from functools import cache
 from itertools import combinations_with_replacement
 from typing import Any
 
 import cyvcf2
+import requests
 from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
 
@@ -446,3 +448,16 @@ def apply_gene_specific_rules(
         return is_variant_exact_p(change=rule, variant=variant)
 
     raise NotImplementedError('Not sure what the rule should be here.')
+
+
+@cache
+def get_latest_zenodo_file(record_id: int) -> tuple[str, str]:
+    """Take a zenodo record ID, find the latest version of that record, and return the attachment link."""
+
+    # use this record ID to find the latest record ID
+    latest_url = f'https://zenodo.org/api/records/{record_id}/versions/latest'
+    data = requests.get(latest_url, timeout=60).json()
+
+    # navigate to the files, and find the content URL we can use to download
+    file_link = data['files'][0]['links']['self']
+    return str(data['recid']), file_link

@@ -5,13 +5,12 @@ process EncodeAlphaMissense {
 
     input:
         path vcf
-        path encode_json
 
     output:
         path "filtered_alphamissense.zip"
 
     script:
         """
-        echtvar encode filtered_alphamissense.zip ${encode_json} ${vcf}
+        echtvar encode filtered_alphamissense.zip /talos_af/echtvar/am_config.json ${vcf}
         """
 }

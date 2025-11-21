@@ -5,13 +5,12 @@ process EncodeClinvar {
 
     input:
         path vcf
-        path encode_json
 
     output:
         path "filtered_clinvar.zip"
 
     script:
         """
-        echtvar encode filtered_clinvar.zip ${encode_json} ${vcf}
+        echtvar encode filtered_clinvar.zip /talos_af/echtvar/clinvar_config.json ${vcf}
         """
 }

@@ -9,12 +9,20 @@ import gzip
 from argparse import ArgumentParser
 from csv import DictReader
 
+# use this to get the installed location of the header file
+from importlib import resources
+
 from talos_af.utils import REGION_DICT, process_bed, region_of_interest
 
 
-def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, header: str, output: str):
+def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, output: str):
     """Read the compressed TSV input file, filter it by the acceptable regions, and write as a new minimised VCF."""
-    with open(input_file) as handle, open(header) as head_in, gzip.open(output, 'wt') as out:
+
+    with (
+        open(input_file) as handle,
+        resources.open_text('talos_af', 'clinvar_header.txt') as head_in,
+        gzip.open(output, 'wt') as out,
+    ):
         for line in head_in:
             out.write(line)
 
@@ -36,16 +44,15 @@ def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, header: str, out
                 out.write(f'{chrom}\t{pos}\t.\t{ref}\t{alt}\t60\tPASS\t{sig};{stars};{allele_id}\n')
 
 
-def main(input_path: str, regions: str, header: str, output: str):
+def main(input_path: str, regions: str, output: str):
     bed_lookup = process_bed(bed_file=regions)
-    parse_and_filter_tsv(input_file=input_path, regions=bed_lookup, header=header, output=output)
+    parse_and_filter_tsv(input_file=input_path, regions=bed_lookup, output=output)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--input', help='input clinvar tsv')
     parser.add_argument('--regions', help='input bed file containing regions of interest')
-    parser.add_argument('--header', help='header file for the output VCF')
     parser.add_argument('--output', help='File to write, as a gzipped VCF')
     args = parser.parse_args()
-    main(input_path=args.input, regions=args.regions, header=args.header, output=args.output)
+    main(input_path=args.input, regions=args.regions, output=args.output)

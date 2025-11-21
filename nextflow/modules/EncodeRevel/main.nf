@@ -12,6 +12,6 @@ process EncodeRevel {
 
     script:
         """
-        echtvar encode filtered_revel.zip ${encode_json} ${vcf}
+        echtvar encode filtered_revel.zip /talos_af/echtvar/revel_config.json ${vcf}
         """
 }
