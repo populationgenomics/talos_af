@@ -346,7 +346,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --cohort {dataset.name} \\
                 --ref_genome {ref_fa} \\
                 --output_dir {job.output} \\
-                --gff_input {gff3_localised}
+                --gff_input {gff3_localised} \\
+                -without-docker
             """,
         )
 
