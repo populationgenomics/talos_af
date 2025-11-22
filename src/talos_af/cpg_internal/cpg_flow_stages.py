@@ -326,7 +326,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
             index=f'{vcf_path}.tbi',
         )['vcf']
 
-        pedigree = dataset.write_ped_file(out_path=outputs['pedigree'])
+        pedigree = batch_instance.read_input(dataset.write_ped_file(out_path=outputs['pedigree']))
 
         # nextflow go brrrr
         job.command(
@@ -344,9 +344,9 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --clinvar_echtvar {clinvar_zip} \\
                 --alphamissense_echtvar {am_zip} \\
                 --cohort {dataset.name} \\
-                --ref_fa {ref_fa} \\
+                --ref_genome {ref_fa} \\
                 --output_dir {job.output} \\
-                --gff3 {gff3_localised}
+                --gff_input {gff3_localised}
             """,
         )
 
