@@ -25,7 +25,7 @@ class GlobalFilter:
     """
 
     # a lookup of the attribute name vs. the corresponding configurable filter to be used on small variants
-    small_dict: ClassVar[dict[str, float | int]] = {
+    thresholds: ClassVar[dict[str, float | int]] = {
         'gnomad_af_joint': config.config_retrieve('gnomad_max_af'),
         'gnomad_homalt_joint': config.config_retrieve('gnomad_max_homozygotes'),
     }
@@ -35,12 +35,12 @@ class GlobalFilter:
 
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
-        for key, threshold in self.small_dict.items():
+        for key, threshold in self.thresholds.items():
             if key in variant.info and variant.info[key] > threshold:
                 return True
         # on sex chroms, apply hemi-count filter
         if variant.coordinates.chrom in HEMI_CHROMS:
-            return variant.info.get('gnomad_ac_xy', 0) > self.small_gnomad_hemi
+            return variant.info.get('gnomad_ac_joint_xy', 0) > self.small_gnomad_hemi
         return False
 
 
@@ -52,7 +52,7 @@ class DominantFilter:
     """
 
     # a lookup of the attribute name vs. the corresponding configurable filter
-    small_dict: ClassVar[dict[str, float | int]] = {
+    thresholds: ClassVar[dict[str, float | int]] = {
         'gnomad_af_joint': config.config_retrieve('dominant_gnomad_max_af'),
         'gnomad_ac_joint': config.config_retrieve('dominant_gnomad_max_ac'),
         'gnomad_homalt_joint': config.config_retrieve('dominant_gnomad_max_homozygotes'),
@@ -61,7 +61,9 @@ class DominantFilter:
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
         # check against each small-variant filter
-        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
+        return any(
+            (key in variant.info and variant.info[key] > threshold) for key, threshold in self.thresholds.items()
+        )
 
 
 @dataclass
@@ -69,13 +71,13 @@ class ClinVarFilter:
     """This will apply more lenient filters to ClinVar Pathogenic variants."""
 
     # a lookup of the attribute name vs. the corresponding configurable filter
-    small_dict: ClassVar[dict[str, float]] = {
+    thresholds: ClassVar[dict[str, float]] = {
         'gnomad_af_joint': config.config_retrieve('clinvar_gnomad_max_af'),
     }
 
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
-        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
+        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.thresholds.items())
 
 
 @dataclass
@@ -83,14 +85,14 @@ class ClinVarDominantFilter:
     """This will apply more lenient filters to ClinVar Pathogenic variants, Designed to run on Dominant variants."""
 
     # a lookup of the attribute name vs. the corresponding configurable filter
-    small_dict: ClassVar[dict[str, float]] = {
+    thresholds: ClassVar[dict[str, float]] = {
         'gnomad_af_joint': config.config_retrieve('clinvar_dominant_gnomad_max_af'),
         'af': config.config_retrieve('clinvar_dominant_callset_max_af'),
     }
 
     def too_common(self, variant: models.VariantAf) -> bool:
         """Check if a variant is too common in the population."""
-        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.small_dict.items())
+        return any(key in variant.info and variant.info[key] > threshold for key, threshold in self.thresholds.items())
 
 
 class BaseMoi(abc.ABC):
@@ -127,7 +129,7 @@ class BaseMoi(abc.ABC):
         Returns:
             bool: True if the variant is too common
         """
-        if variant.info.get('clinvar_plp'):
+        if variant.clinvar_path:
             return self.clinvar_filter.too_common(variant=variant)
         return self.global_filter.too_common(variant)
 
