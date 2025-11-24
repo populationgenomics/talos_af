@@ -22,6 +22,7 @@ process AnnotateWithEchtvar {
             -e ${revel_zip} \
             -e ${am_zip} \
             -e ${clinvar_zip} \
+            -i "gnomad_AF_joint < 0.05" \
             ${vcf} \
             "${params.cohort}_echtvar.vcf.bgz"
         """

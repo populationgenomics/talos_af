@@ -227,7 +227,7 @@ def organise_csq(
 
     # get and split revel data
     revel_dict = {}
-    if (revel := var_details.pop('revel', None)) and isinstance(revel, str):
+    if (revel := var_details.pop('revel', '.')) != '.' and isinstance(revel, str):
         score, transcripts = revel.split('~')
         for transcript in transcripts.split(','):
             revel_dict[transcript] = score
@@ -287,7 +287,7 @@ def create_small_variant(
     coordinates = models.Coordinates(chrom=var.CHROM.replace('chr', ''), pos=var.POS, ref=var.REF, alt=var.ALT[0])
 
     # this is so flexible it's basically useless
-    info: dict[str, Any] = {x.lower(): y for x, y in var.INFO}
+    info: dict[str, Any] = {x.lower(): y for x, y in var.INFO if y is not None}
 
     clinvar_path = info.get('clinical_significance') == PATHOGENIC
 

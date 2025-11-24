@@ -26,8 +26,8 @@ class GlobalFilter:
 
     # a lookup of the attribute name vs. the corresponding configurable filter to be used on small variants
     small_dict: ClassVar[dict[str, float | int]] = {
-        'gnomad_af': config.config_retrieve('gnomad_max_af'),
-        'gnomad_homalt': config.config_retrieve('gnomad_max_homozygotes'),
+        'gnomad_af_joint': config.config_retrieve('gnomad_max_af'),
+        'gnomad_homalt_joint': config.config_retrieve('gnomad_max_homozygotes'),
     }
 
     # only to be applied on chrX/Y
@@ -53,9 +53,9 @@ class DominantFilter:
 
     # a lookup of the attribute name vs. the corresponding configurable filter
     small_dict: ClassVar[dict[str, float | int]] = {
-        'gnomad_af': config.config_retrieve('dominant_gnomad_max_af'),
-        'gnomad_ac': config.config_retrieve('dominant_gnomad_max_ac'),
-        'gnomad_homalt': config.config_retrieve('dominant_gnomad_max_homozygotes'),
+        'gnomad_af_joint': config.config_retrieve('dominant_gnomad_max_af'),
+        'gnomad_ac_joint': config.config_retrieve('dominant_gnomad_max_ac'),
+        'gnomad_homalt_joint': config.config_retrieve('dominant_gnomad_max_homozygotes'),
     }
 
     def too_common(self, variant: models.VariantAf) -> bool:
@@ -70,7 +70,7 @@ class ClinVarFilter:
 
     # a lookup of the attribute name vs. the corresponding configurable filter
     small_dict: ClassVar[dict[str, float]] = {
-        'gnomad_af': config.config_retrieve('clinvar_gnomad_max_af'),
+        'gnomad_af_joint': config.config_retrieve('clinvar_gnomad_max_af'),
     }
 
     def too_common(self, variant: models.VariantAf) -> bool:
@@ -84,7 +84,7 @@ class ClinVarDominantFilter:
 
     # a lookup of the attribute name vs. the corresponding configurable filter
     small_dict: ClassVar[dict[str, float]] = {
-        'gnomad_af': config.config_retrieve('clinvar_dominant_gnomad_max_af'),
+        'gnomad_af_joint': config.config_retrieve('clinvar_dominant_gnomad_max_af'),
         'af': config.config_retrieve('clinvar_dominant_callset_max_af'),
     }
 
