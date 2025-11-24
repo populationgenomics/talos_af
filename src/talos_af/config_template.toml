@@ -28,19 +28,6 @@ clinvar_dominant_gnomad_max_af = 0.00005
 clinvar_callset_max_af = 0.05
 clinvar_dominant_callset_max_af = 0.05
 
-[workflow]
-check_expected_outputs = true
-use_this_mt = false
-sequencing_type = 'exome'
-input_cohorts = ['COH5459']
-#force_stages = ['GenerateBedFromAcmg']
-
-ref_fa = "gs://cpg-common-main/references/hg38/v0/dragen_reference/Homo_sapiens_assembly38_masked.fasta"
-
-[acmg_resources]
-version = "3.3"
-specification = "gs://cpg-common-test/references/talos_af/acmg_spec_3_3.tsv"
-
 [references]
 gff3 = "gs://cpg-common-main/references/ensembl_115/GRCh38_chrM_renamed.gff3.gz"
 mane_summary = "gs://cpg-common-main/references/mane_1.4/mane_1.4.summary.txt.gz"
