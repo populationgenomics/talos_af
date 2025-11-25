@@ -31,6 +31,9 @@ workflow {
     // read the echtvar reference file as an input channel
     ch_gnomad_echtvar = channel.fromPath(params.gnomad_echtvar, checkIfExists: true)
 
+    // optional path to a previous set of results
+    ch_previous_results = channel.fromPath(params.previous_results, checkIfExists: true)
+
     PrepareAcmgSpec(
         ch_acmg_spec,
         ch_mane_input,
@@ -111,5 +114,6 @@ workflow {
         ch_pedigree,
         PrepareAcmgSpec.out,
         ch_config,
+        ch_previous_results,
     )
 }

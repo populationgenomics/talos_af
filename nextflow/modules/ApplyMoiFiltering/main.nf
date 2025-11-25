@@ -8,9 +8,13 @@ process ApplyMoiFiltering {
         path pedigree
         path spec
         path config
+        path previous
 
     output:
         path "${params.cohort}_results.json"
+
+	script:
+		def history_arg = previous.name != 'NO_FILE' ? "--prior_results $previous_" : ''
 
     script:
         """
@@ -20,6 +24,6 @@ process ApplyMoiFiltering {
             --vcf ${vcf} \
             --acmg_spec ${spec} \
             --pedigree ${pedigree} \
-            --output ${params.cohort}_results.json
+            --output ${params.cohort}_results.json ${history_arg}
         """
 }

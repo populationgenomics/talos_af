@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from talos_af.date_string import get_date_string
+
 NON_HOM_CHROM = ['X', 'Y', 'MT', 'M']
 CHROM_ORDER = list(map(str, range(1, 23))) + NON_HOM_CHROM
 
@@ -66,6 +68,7 @@ class ReportableVariant(BaseModel):
 
     var_id: str
     support_vars: set[str] = Field(default_factory=set)
+    first_seen: str = get_date_string()
 
 
 class ResultsAf(BaseModel):

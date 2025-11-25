@@ -343,7 +343,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --revel_echtvar {revel_zip} \\
                 --clinvar_echtvar {clinvar_zip} \\
                 --alphamissense_echtvar {am_zip} \\
-                --cohort {dataset.name} \\
+                --cohort output \\
                 --ref_genome {ref_fa} \\
                 --output_dir {job.output} \\
                 --gff_input {gff3_localised} \\

@@ -32,7 +32,13 @@ def set_up_filters(parsed_spec: dict, pedigree: PedigreeParser) -> dict[str, che
     return moi_dict
 
 
-def main(vcf_path: str, acmg_spec_path: str, pedigree_path: str, output_path: str):
+def main(
+    vcf_path: str,
+    acmg_spec_path: str,
+    pedigree_path: str,
+    output_path: str,
+    prior: str | None = None,
+):
     """All the things."""
 
     with open(acmg_spec_path) as f:
@@ -68,13 +74,14 @@ def main(vcf_path: str, acmg_spec_path: str, pedigree_path: str, output_path: st
                 for sample, instances in results.items():
                     sample_results[sample].extend(instances)
 
+    results_from_this_run = models.ResultsAf(variants=selected_variants, instances=sample_results)
+
+    # if there are prior results, use those to reset first-seen dates
+    utils_af.update_dates_from_prior_data(results_from_this_run, prior_path=prior)
+
     # write the output to long term storage using Pydantic - write if data is valid against the schema, write to file
     with open(output_path, 'w') as out_file:
-        out_file.write(
-            models.ResultsAf.model_validate(
-                {'variants': selected_variants, 'instances': sample_results}
-            ).model_dump_json(indent=4)
-        )
+        out_file.write(models.ResultsAf.model_validate(results_from_this_run).model_dump_json(indent=4))
 
 
 if __name__ == '__main__':
@@ -83,5 +90,12 @@ if __name__ == '__main__':
     parser.add_argument('--acmg_spec', help="Specification of each gene's interpretation rules", required=True)
     parser.add_argument('--pedigree', help='Pedigree for the callset (required for sex)', required=True)
     parser.add_argument('--output', help='Path to write the output results to', required=True)
+    parser.add_argument('--prior_results', help='Optional, Path to a previous set of results')
     args = parser.parse_args()
-    main(vcf_path=args.vcf, acmg_spec_path=args.acmg_spec, pedigree_path=args.pedigree, output_path=args.output)
+    main(
+        vcf_path=args.vcf,
+        acmg_spec_path=args.acmg_spec,
+        pedigree_path=args.pedigree,
+        output_path=args.output,
+        prior=args.prior_results,
+    )

@@ -1,3 +1,4 @@
+import json
 import re
 from collections import defaultdict
 from functools import cache
@@ -6,6 +7,7 @@ from typing import Any
 
 import cyvcf2
 import requests
+from cloudpathlib.anypath import to_anypath
 from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
 
@@ -463,3 +465,33 @@ def get_latest_zenodo_file(record_id: int) -> tuple[str, str]:
     # navigate to the files, and find the content URL we can use to download
     file_link = data['files'][0]['links']['self']
     return str(data['recid']), file_link
+
+
+def update_dates_from_prior_data(current: models.ResultsAf, prior_path: str | None = None) -> None:
+    """
+    Ingest a previous object, and update any current discovery dates if they were previously seen
+
+    Args:
+        current: models.ResultsAf object, containing this run's results
+        prior_path: str, path to prior data
+    """
+    if prior_path is None:
+        return
+
+    with to_anypath(prior_path).open() as handle:
+        json_data = json.load(handle)
+        # potentially walk-up model version
+        old_data = models.ResultsAf.model_validate(json_data)
+
+        # iterate over the older object
+        for sample, instances in old_data.instances.items():
+            # if the older data sample ID is not in the current dataset, move on
+            if sample not in current.instances:
+                continue
+
+            # find the associated date for all the variant instances for this sample ID
+            old_id_dates = {instance.var_id: instance.first_seen for instance in old_data.instances[sample]}
+            for instance in current.instances[sample]:
+                # if the same var_id is seen in this current round, backdate the first_seen date
+                if instance.var_id in old_id_dates:
+                    instance.first_seen = old_id_dates[instance.var_id]
