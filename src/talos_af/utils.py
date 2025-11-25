@@ -484,14 +484,14 @@ def update_dates_from_prior_data(current: models.ResultsAf, prior_path: str | No
         old_data = models.ResultsAf.model_validate(json_data)
 
         # iterate over the older object
-        for sample, instances in old_data.instances.items():
+        for sample, old_instances in old_data.instances.items():
             # if the older data sample ID is not in the current dataset, move on
             if sample not in current.instances:
                 continue
 
             # find the associated date for all the variant instances for this sample ID
-            old_id_dates = {instance.var_id: instance.first_seen for instance in old_data.instances[sample]}
-            for instance in current.instances[sample]:
+            old_id_dates = {instance.var_id: instance.first_seen for instance in old_instances[sample]}
+            for new_instance in current.instances[sample]:
                 # if the same var_id is seen in this current round, backdate the first_seen date
-                if instance.var_id in old_id_dates:
-                    instance.first_seen = old_id_dates[instance.var_id]
+                if new_instance.var_id in old_id_dates:
+                    new_instance.first_seen = old_id_dates[new_instance.var_id]

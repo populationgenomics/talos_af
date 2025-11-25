@@ -350,6 +350,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 -without-docker
             """,
         )
+        job.command('tree .')
 
         # set some resource params
         job.storage('100Gi').memory('highmem').cpu(2)
