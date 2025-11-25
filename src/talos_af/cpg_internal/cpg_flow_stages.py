@@ -351,6 +351,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
             """,
         )
         job.command('tree .')
+        job.command(f'tree {job.output}')
 
         # set some resource params
         job.storage('100Gi').memory('highmem').cpu(2)
