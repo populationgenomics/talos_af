@@ -301,9 +301,9 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         # set some output expectations
         job.declare_resource_group(
             output={
-                f'{dataset.name}_results.json': '{root}_results.json',
-                f'{dataset.name}_filtered.vcf.bgz': '{root}_filtered.vcf.bgz',
-                f'{dataset.name}_filtered.vcf.bgz.tbi': '{root}_filtered.vcf.bgz.tbi',
+                f'{dataset.name}_results.json': f'{{root}}/{dataset.name}_results.json',
+                f'{dataset.name}_filtered.vcf.bgz': f'{{root}}/{dataset.name}_filtered.vcf.bgz',
+                f'{dataset.name}_filtered.vcf.bgz.tbi': f'{{root}}/{dataset.name}_filtered.vcf.bgz.tbi',
             },
         )
 
@@ -343,7 +343,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --revel_echtvar {revel_zip} \\
                 --clinvar_echtvar {clinvar_zip} \\
                 --alphamissense_echtvar {am_zip} \\
-                --cohort output \\
+                --cohort {dataset.name} \\
                 --ref_genome {ref_fa} \\
                 --output_dir {job.output} \\
                 --gff_input {gff3_localised} \\
