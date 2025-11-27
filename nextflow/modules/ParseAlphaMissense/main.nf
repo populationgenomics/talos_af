@@ -7,7 +7,6 @@ process ParseAlphaMissense {
     input:
         path am_tsv
         path bed
-        path header
 
     output:
         path "filtered_alphamissense.vcf.gz"
@@ -17,7 +16,6 @@ process ParseAlphaMissense {
         python -m talos_af.scripts.process_alphamissense \
             --input ${am_tsv} \
             --regions ${bed} \
-            --header ${header} \
             --output filtered_alphamissense.vcf.gz
         """
 }

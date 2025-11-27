@@ -6,7 +6,6 @@ process ParseRevel {
     input:
         path revel
         path bed
-        path header
 
     output:
         path "filtered_revel.vcf.gz"
@@ -16,7 +15,6 @@ process ParseRevel {
         python -m talos_af.scripts.process_revel \
             --input ${revel} \
             --regions ${bed} \
-            --header ${header} \
             --output filtered_revel.vcf.gz
         """
 }
