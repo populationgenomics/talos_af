@@ -302,8 +302,11 @@ def create_small_variant(
 
     phased = get_phase_data(samples, var)
 
-    # todo tidy up some typing here
     transcript_consequences: list[dict[str, str | int | float]] = info.pop('transcript_consequences')
+
+    # revise in the future, for now we're skipping any non-transcript consequence variants
+    if not transcript_consequences:
+        return None
 
     return models.VariantAf(
         gene=transcript_consequences[0]['ensg'],
