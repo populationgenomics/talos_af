@@ -84,7 +84,7 @@ jobs:
 
       - name: 'build image'
         run: |
-          docker build . -f Dockerfile \
+          docker build . -f src/talos_af/cpg_internal/CPG_Dockerfile \
           --build-arg VERSION=${{ matrix.tag }} \
           --tag ${{ env.IMAGES_PREFIX }}/${{ matrix.name }}:${{ matrix.tag }}
 
