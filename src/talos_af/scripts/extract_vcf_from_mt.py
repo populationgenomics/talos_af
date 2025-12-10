@@ -71,8 +71,20 @@ def main(
     # filter to overlaps with the BED file
     mt = mt.filter_rows(hl.is_defined(bed_region[mt.locus]))
 
+    # starting with nothing if it was a VDS export
+    if 'info' not in mt.row_value:
+        mt = hl.variant_qc(mt)
+        mt = mt.annotate_rows(
+            info=hl.Struct(
+                AF=[mt.variant_qc.AF[1]],
+                AN=mt.variant_qc.AN,
+                AC=[mt.variant_qc.AC[1]],
+            ),
+            filters=hl.empty_set(hl.tstr),
+        )
+
     # replace the existing INFO block to just have AC/AN/AF - no other carry-over. Allow for this to be missing.
-    if 'AF' not in mt.info:
+    elif 'AF' not in mt.info:
         mt = hl.variant_qc(mt)
         mt = mt.annotate_rows(
             info=mt.info.annotate(
@@ -82,7 +94,6 @@ def main(
             ),
             filters=hl.empty_set(hl.tstr),
         )
-        mt = mt.drop('variant_qc')
 
     mt = mt.select_rows(
         info=hl.struct(
