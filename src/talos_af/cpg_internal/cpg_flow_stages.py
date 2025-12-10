@@ -240,12 +240,34 @@ class GenerateClinvarZip(stage.MultiCohortStage):
         return self.make_outputs(multicohort, outputs, jobs=job)
 
 
-@stage.stage(required_stages=GenerateBedFromAcmg)
+@stage.stage
+class ExportMtFromVds(stage.DatasetStage):
+    """Optional, generate a starting MT from a VDS."""
+
+    def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
+        if vds := config.config_retrieve(['workflow', 'use_vds', dataset.name]):
+            return {'mt': dataset.prefix() / workflow.get_workflow().name / self.name / f'{to_path(vds).name}.mt'}
+        return {}
+
+    def queue_jobs(self, dataset: targets.Dataset, inputs: stage.StageInput) -> stage.StageOutput:
+        output = self.expected_outputs(dataset)
+
+        if not (vds := config.config_retrieve(['workflow', 'use_vds', dataset.name])):
+            return self.make_outputs(dataset, output)
+
+        batch_instance = hail_batch.get_batch()
+
+        job = batch_instance.new_bash_job(f'MT from VDS: {dataset.name}', attributes=self.get_job_attrs(dataset))
+        job.image(config.config_retrieve(['workflow', 'driver_image']))
+        job.command(f'python -m talos_af.scripts.mt_from_vds --input {vds} --output {output["mt"]}')
+        return self.make_outputs(dataset, output, jobs=job)
+
+
+@stage.stage(required_stages=[GenerateBedFromAcmg, ExportMtFromVds])
 class ExportVcfFromMt(stage.DatasetStage):
     """Find the latest AnnotateDataset output for this Dataset, export it as a VCF."""
 
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
-        # dataset_bucket / wf_name / ACMG_version / stage_name / vcf
         return {
             'vcf': dataset.prefix()
             / workflow.get_workflow().name
@@ -259,7 +281,10 @@ class ExportVcfFromMt(stage.DatasetStage):
 
         batch_instance = hail_batch.get_batch()
 
-        input_mt = utils_internal.query_for_latest_analysis(dataset=dataset.name, stage_name='AnnotateDataset')
+        if config.config_retrieve(['workflow', 'use_vds', dataset.name]):
+            input_mt = inputs.as_str(dataset, ExportMtFromVds, 'mt')
+        else:
+            input_mt = utils_internal.query_for_latest_analysis(dataset=dataset.name, stage_name='AnnotateDataset')
 
         bed_file = inputs.as_str(workflow.get_multicohort(), GenerateBedFromAcmg, 'bed')
 
