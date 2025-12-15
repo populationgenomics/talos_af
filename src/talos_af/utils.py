@@ -293,6 +293,9 @@ def create_small_variant(
 
     clinvar_path = info.get('clinical_significance') == PATHOGENIC
 
+    info['clinvar_allele'] = info['allele_id'] if clinvar_path else None
+    info['clinvar_stars'] = int(info['gold_stars']) if clinvar_path else None
+
     consequential = organise_csq(info, id_lookup)
 
     if not (clinvar_path or consequential):
