@@ -11,9 +11,7 @@ but we don't need to keep paring it down and down
 import json
 import re
 from argparse import ArgumentParser
-from collections import defaultdict
 from dataclasses import dataclass
-from os.path import join
 from pathlib import Path
 from typing import Any
 
@@ -21,25 +19,18 @@ import jinja2
 import pandas as pd
 from cloudpathlib.anypath import to_anypath
 from loguru import logger
-from talos.config import config_retrieve
-from talos.models import PanelApp, PanelDetail, ReportVariant, ResultData, SmallVariant, StructuralVariant
-from talos.utils import read_json_from_path
+
+from talos_af.config import config_retrieve
+from talos_af.models import ResultsAf, VariantAf
 
 JINJA_TEMPLATE_DIR = Path(__file__).absolute().parent / 'templates'
-MIN_REPORT_SIZE: int = 10
-MAX_REPORT_SIZE: int = 200
 
 # above this length we trim the actual bases to just an int
 MAX_INDEL_LEN: int = 10
 
 # regex pattern - number, number, not-number
-KNOWN_YEAR_PREFIX = re.compile(r'\d{2}\D')
 CDNA_SQUASH = re.compile(r'(?P<type>ins|del)(?P<bases>[ACGT]+)$')
 MEAN_SLASH_SAMPLE = 'Mean/sample'
-
-# reactive to different versions of gnomAD
-GNOMAD_POP = config_retrieve(['RunHailFilteringSv', 'gnomad_population'], 'gnomad_v4.1')
-GNOMAD_SV_KEY = f'{GNOMAD_POP}_sv_svid'
 
 
 def parse_ids_from_file(ext_id_file: str | None) -> dict[str, str] | None:
@@ -61,7 +52,9 @@ def parse_ids_from_file(ext_id_file: str | None) -> dict[str, str] | None:
     file_as_path = to_anypath(ext_id_file)
     if (suffix := file_as_path.suffix) == '.json':
         # read the JSON file as a dictionary
-        id_mapping = read_json_from_path(ext_id_file)
+        with file_as_path.open() as f:
+            id_mapping = json.load(f)
+
         if not isinstance(id_mapping, dict):
             raise ValueError(f'Expected a dictionary in {ext_id_file}, got {type(id_mapping)}')
 
@@ -85,50 +78,6 @@ def parse_ids_from_file(ext_id_file: str | None) -> dict[str, str] | None:
     return id_mapping
 
 
-def known_date_prefix_check(all_results: ResultData, external_id_map: dict[str, str]) -> list[str]:
-    """Check for known date prefixes in the results. This acts on the external IDs, and fits a CPG use-case."""
-
-    known_prefixes: dict[str, int] = defaultdict(int)
-    for sample_id in all_results.results:
-        if sample_id in external_id_map and (match := KNOWN_YEAR_PREFIX.match(external_id_map[sample_id])):
-            known_prefixes[match.group()[0:2]] += 1
-        else:
-            logger.info('There is no consistent sample ID prefix')
-            return []
-
-    logger.info(f'Sample distribution by prefix: {dict(known_prefixes)}')
-    return sorted(known_prefixes.keys())
-
-
-def split_data_into_sub_reports(
-    all_results: ResultData,
-    external_id_map: dict[str, str],
-) -> list[tuple[ResultData, str, str]]:
-    """
-    Split the data into sub-reports, only if there's a common prefix (e.g. by year)
-    Return a list of the ResultData subsets, output base path, and a subset identifier
-
-    Returns:
-        tuple: a list of tuples, each containing a ResultData object, the output base path, and a subset identifier
-    """
-    return_results: list[tuple[ResultData, str, str]] = []
-
-    if prefixes := known_date_prefix_check(all_results, external_id_map=external_id_map):
-        for prefix in prefixes:
-            this_rd = ResultData(
-                metadata=all_results.metadata,
-                results={
-                    sample: content
-                    for sample, content in all_results.results.items()
-                    if external_id_map.get(sample, sample).startswith(prefix)
-                },
-                version=all_results.version,
-            )
-            logger.info(f'Found {len(this_rd.results)} with prefix {prefix}')
-            return_results.append((this_rd, f'subset_{prefix}.html', prefix))
-    return return_results
-
-
 class NoVariantsFoundError(Exception):
     """raise if a report subset contains no data"""
 
@@ -146,21 +95,6 @@ class DataTable:
     description: str = ''
 
 
-def variant_in_forbidden_gene(variant_obj: ReportVariant, forbidden_genes):
-    """
-    Check if gene id or gene symbol is on forbidden gene list
-    """
-    for gene_id in variant_obj.gene.split(','):
-        if gene_id in forbidden_genes:
-            return True
-
-    if isinstance(variant_obj.var_data, StructuralVariant):
-        return False
-
-    # Allow for exclusion by Symbol too
-    return any(tx_con['gene'] in forbidden_genes for tx_con in variant_obj.var_data.transcript_consequences)
-
-
 class HTMLBuilder:
     """
     Takes the input, makes the output
@@ -169,20 +103,14 @@ class HTMLBuilder:
     def __init__(
         self,
         results_dict: ResultData,
-        panelapp_path: str,
-        subset_id: str | None = None,
         link_engine: 'LinkEngine | None' = None,
         ext_id_map: dict[str, str] | None = None,
-        ext_labels: dict | None = None,
     ):
         """
         Args:
             results_dict (ResultData): the results object
-            panelapp_path (str): where to read panelapp data from
-            subset_id (str, optional): the subset ID to use for this report
             link_engine (LinkEngine, optional): the link engine to generate hyperlinks with
             ext_id_map (dict[str, str], optional): a mapping of sample IDs to external IDs, optional
-            ext_labels (dict | None): a nested dictionary of sample IDs, variant identifiers, and labels, or None
         """
 
         if ext_id_map is None:
@@ -190,36 +118,10 @@ class HTMLBuilder:
 
         self.ext_id_map = ext_id_map or {}
 
-        # ID to use if this is a subset report
-        self.subset_id = subset_id
-
-        # get a hold of the base panel ID we're using
-        # this is used to differentiate between new in base and new in other
-        self.base_panel: int = config_retrieve(['GeneratePanelData', 'default_panel'])
-
-        self.panelapp: PanelApp = read_json_from_path(panelapp_path, return_model=PanelApp)
-
-        # If it exists, read the forbidden genes as a list
-        self.forbidden_genes = set(config_retrieve(['GeneratePanelData', 'forbidden_genes'], []))
-        logger.warning(f'There are {len(self.forbidden_genes)} forbidden genes')
-
         # take the link-generating instance (can be None)
         self.link_engine = link_engine
 
-        # Optionally read in the labels file
-        # This file should be a nested dictionary of sample IDs and variant identifiers
-        # with a list of corresponding label values, e.g.:
-        # ruff: noqa: ERA001
-        # {
-        #     "sample1": {
-        #         "1-123456-A-T": ["label1", "label2"],
-        #         "1-123457-A-T": ["label1"]
-        #     },
-        # }
-        self.ext_labels = ext_labels or {}
-
         self.metadata = results_dict.metadata
-        self.panel_names = {panel.name for panel in self.metadata.panels.values()}
 
         # Process samples and variants
         self.samples: list[Sample] = []
@@ -233,7 +135,6 @@ class HTMLBuilder:
                     name=sample,
                     metadata=content.metadata,
                     variants=content.variants,
-                    ext_labels=self.ext_labels.get(sample, {}),
                     html_builder=self,
                 ),
             )
@@ -243,14 +144,10 @@ class HTMLBuilder:
 
     def read_metadata(self) -> dict[str, pd.DataFrame]:
         """
-        parses into a general table and a panel table
+        parses into a general table
         """
 
         return {
-            'Panels': pd.DataFrame(
-                {'ID': panel.id, 'Version': panel.version, 'Name': panel.name}
-                for panel in self.metadata.panels.values()
-            ),
             'Meta': pd.DataFrame(
                 {
                     'Data': key.capitalize(),
@@ -390,22 +287,18 @@ class Sample:
         self,
         name: str,
         metadata,
-        variants: list[ReportVariant],
-        ext_labels: dict[str, list[str]],
+        variants: list[VariantAf],
         html_builder: HTMLBuilder,
     ):
         self.metadata = metadata
         self.name = name
         self.family_id = metadata.family_id
         self.family_members = metadata.members
-        self.phenotypes = metadata.phenotypes
         self.ext_id = html_builder.ext_id_map.get(name, name)
-        self.panel_details = metadata.panel_details
         self.family_display: dict[str, str] = {}
 
         for member_id in metadata.members:
-            report_ext = f'({ext_labels[member_id]})' if member_id in ext_labels else ''
-            self.family_display[member_id] = f'{member_id} {report_ext}'
+            self.family_display[member_id] = member_id
 
         # create a url link out to the sample-level data
         if html_builder.link_engine:
@@ -418,36 +311,17 @@ class Sample:
             Variant(
                 report_variant,
                 self,
-                ext_labels.get(report_variant.var_data.coordinates.string_format, []),
                 html_builder,
             )
             for report_variant in variants
             # the report can contain results found previously but not now, unsure if we want these reported
             if report_variant.found_in_current_run
-            and not variant_in_forbidden_gene(report_variant, html_builder.forbidden_genes)
         ]
-
-        # Pre-serialize complex nested objects for Jinja2
-        self.panel_details_json = (
-            {str(pid): panel.model_dump(mode='json') for pid, panel in self.panel_details.items()}
-            if hasattr(self, 'panel_details') and self.panel_details
-            else {}
-        )
 
         self.family_members_json = (
             {member_id: member.model_dump(mode='json') for member_id, member in self.family_members.items()}
             if hasattr(self, 'family_members') and self.family_members
             else {}
-        )
-
-        # Pre-serialize phenotypes (HpoTerm objects)
-        self.phenotypes_json = (
-            [
-                phenotype.model_dump(mode='json') if hasattr(phenotype, 'model_dump') else phenotype
-                for phenotype in self.phenotypes
-            ]
-            if hasattr(self, 'phenotypes') and self.phenotypes
-            else []
         )
 
         # Pre-serialize family_display (should be simple dict, but let's be safe)
@@ -542,23 +416,18 @@ class Variant:
         - SVs always need to be presented differently
            - e.g INS 4079bp
         """
-        if isinstance(self.var_data, SmallVariant):
-            if len(self.ref) > MAX_INDEL_LEN or len(self.alt) > MAX_INDEL_LEN:
-                ref_len = len(self.ref)
-                alt_len = len(self.alt)
-                if ref_len > alt_len:
-                    return f'del {ref_len - alt_len}bp'
-                if ref_len == alt_len:
-                    return f'complex delins {ref_len}bp'
-                return f'ins {alt_len - ref_len}bp'
+        if len(self.ref) > MAX_INDEL_LEN or len(self.alt) > MAX_INDEL_LEN:
+            ref_len = len(self.ref)
+            alt_len = len(self.alt)
+            if ref_len > alt_len:
+                return f'del {ref_len - alt_len}bp'
+            if ref_len == alt_len:
+                return f'complex delins {ref_len}bp'
+            return f'ins {alt_len - ref_len}bp'
 
-            return f'{self.ref}->{self.alt}'
-        if isinstance(self.var_data, StructuralVariant):
-            return f'{self.var_data.info["svtype"]} {self.var_data.info["svlen"]}bp'
+        return f'{self.ref}->{self.alt}'
 
-        raise ValueError(f'Unknown variant type: {self.var_data.__class__.__name__}')
-
-    def __init__(self, report_variant: ReportVariant, sample: Sample, ext_labels: list, html_builder: HTMLBuilder):  # noqa: PLR0915
+    def __init__(self, report_variant: VariantAf, sample: Sample, html_builder: HTMLBuilder):  # noqa: PLR0915
         self.var_data = report_variant.var_data
         self.var_type = report_variant.var_data.__class__.__name__
         self.chrom = report_variant.var_data.coordinates.chrom
@@ -566,74 +435,29 @@ class Variant:
         self.ref = report_variant.var_data.coordinates.ref
         self.alt = report_variant.var_data.coordinates.alt
         self.change = self.get_var_change()
-        self.categories = report_variant.categories
         self.first_tagged: str = report_variant.first_tagged
         self.support_vars = report_variant.support_vars
         self.warning_flags = report_variant.flags
-        # these are the panel IDs which are matched based on HPO matching in PanelApp
-        self.pheno_matches = {f'{name}({pid})' for pid, name in report_variant.panels.matched.items()}
-        # these are the panel IDs we manually applied to this whole cohort
-        self.forced_matches = {f'{name}({pid})' for pid, name in report_variant.panels.forced.items()}
 
-        # collect all forced and matched panel IDs
-        match_ids = set(report_variant.panels.forced.keys()).union(set(report_variant.panels.matched.keys())) - {
-            html_builder.base_panel,
-        }
-
-        self.reasons = report_variant.reasons
         self.genotypes = report_variant.genotypes
-        self.ext_labels = ext_labels
-        # add the phenotype match date and HPO term id/labels
-        self.phenotype_match_date = report_variant.date_of_phenotype_match
-        self.phenotype_matches = report_variant.phenotype_labels
-
-        # check if this variant is new in the base panel
-        self.new_in_base_panel: bool = False
-
-        # store if this variant is new in any of the other panels
-        self.new_panels: set[str] = set()
 
         # List of (gene_id, symbol)
+        # todo where are genes coming from
         self.genes: list[tuple[str, str]] = []
         for gene_id in report_variant.gene.split(','):
-            gene_panelapp_entry = html_builder.panelapp.genes.get(gene_id, PanelDetail(symbol=gene_id))
-            self.genes.append((gene_id, gene_panelapp_entry.symbol))
-
-            # is this a new gene?
-            new_panels = gene_panelapp_entry.new
-
-            if html_builder.base_panel in new_panels:
-                self.new_in_base_panel = True
-
-            # now draw the rest of the owl
-            self.new_panels.update(
-                {f'{sample.metadata.panel_details[pid]}({pid})' for pid in new_panels.intersection(match_ids)},
-            )
+            self.genes.append((gene_id, 'symbol'))
 
         # Summaries CSQ strings
-        if isinstance(self.var_data, SmallVariant):
-            (self.mane_csq, self.mane_hgvsps) = self.parse_csq()
+        (self.mane_csq, self.mane_hgvsps) = self.parse_csq()
 
         # pull up the highest AlphaMissense score, if present
-        am_scores = (
-            [
-                float(csq['am_pathogenicity'])
-                for csq in self.var_data.transcript_consequences
-                if csq.get('am_pathogenicity')
-            ]
-            if isinstance(self.var_data, SmallVariant)
-            else []
-        )
+        am_scores = [
+            float(csq['am_pathogenicity'])
+            for csq in self.var_data.transcript_consequences
+            if csq.get('am_pathogenicity')
+        ]
 
         self.var_data.info['alpha_missense_max'] = max(am_scores) if am_scores else 'missing'
-
-        # this is the weird gnomad callset ID
-        if (
-            isinstance(self.var_data, StructuralVariant)
-            and GNOMAD_SV_KEY in self.var_data.info
-            and isinstance(self.var_data.info[GNOMAD_SV_KEY], str)
-        ):
-            self.var_data.info['gnomad_key'] = self.var_data.info[GNOMAD_SV_KEY].split('v2.1_')[-1]  # type: ignore[union-attr]
 
         # get the variant-level hyperlink
         if html_builder.link_engine:
@@ -715,49 +539,39 @@ def cli_main():
     logger.info('Running HTML builder')
     parser = ArgumentParser()
     parser.add_argument('--input', help='Path to analysis results', required=True)
-    parser.add_argument('--panelapp', help='PanelApp data', required=True)
     parser.add_argument('--output', help='Final HTML filename', required=True)
     parser.add_argument('--ext_ids', help='Optional, Mapping file for external IDs', default=None)
     parser.add_argument('--seqr_ids', help='Optional, Mapping file for Seqr IDs', default=None)
-    parser.add_argument('--labels', help='Dict, SampleID: VariantID: [labels], optional', default=None)
     args = parser.parse_args()
     main(
         results=args.input,
-        panelapp=args.panelapp,
         output=args.output,
         ext_id_file=args.ext_ids,
         seqr_id_file=args.seqr_ids,
-        external_labels=args.labels,
     )
 
 
 def main(
     results: str,
-    panelapp: str,
     output: str,
     ext_id_file: str | None = None,
     seqr_id_file: str | None = None,
-    external_labels: str | None = None,
 ):
     """
 
     Args:
         results (str): path to the MOI-tested results file
-        panelapp (str): path to the panelapp data
         output (str): where to write the HTML file
         ext_id_file (str | None): optional, path to a file containing external IDs
         seqr_id_file (str | None): optional, path to a file containing Seqr IDs
-        external_labels (str | None): optional, path to a file containing external labels
     """
 
-    report_output_dir = Path(output).parent
-
-    results_object = read_json_from_path(results, return_model=ResultData)
+    with to_anypath(results).open(mode='r') as f:
+        f_json = json.load(f)
+        results_object = ResultsAf.model_validate(f_json)
 
     # can be None if absent, or is a lookup of sample ID in VCF ~ an external ID
     external_id_map = parse_ids_from_file(ext_id_file)
-
-    labels_file: dict[str, dict] = read_json_from_path(external_labels, {})
 
     # set up the link builder, or None
     if (link_section := config_retrieve(['CreateTalosHTML', 'hyperlinks'], None)) and seqr_id_file:
@@ -770,10 +584,8 @@ def main(
     # we always make this main page - we need a reliable output path to generate analysis entries [CPG]
     html = HTMLBuilder(
         results_dict=results_object,
-        panelapp_path=panelapp,
         link_engine=link_builder,
         ext_id_map=external_id_map,
-        ext_labels=labels_file,
     )
 
     # if this fails with a NoVariantsFoundException, there were no variants to present in the whole cohort
@@ -783,26 +595,6 @@ def main(
         html.write_html(output_filepath=output)
     except NoVariantsFoundError:
         logger.warning('No Categorised variants found in this whole cohort')
-
-    if external_id_map is None or config_retrieve(['CreateTalosHTML', 'split_reports'], False) is False:
-        return
-
-    # we only need to do sub-reports if we can delineate by year
-    for data, report, prefix in split_data_into_sub_reports(results_object, external_id_map):
-        html = HTMLBuilder(
-            results_dict=data,
-            panelapp_path=panelapp,
-            subset_id=prefix,
-            link_engine=link_builder,
-            ext_id_map=external_id_map,
-            ext_labels=labels_file,
-        )
-        try:
-            output_filepath = join(report_output_dir, report)
-            logger.debug(f'Attempting to create {report} at {output_filepath}')
-            html.write_html(output_filepath=output_filepath)
-        except NoVariantsFoundError:
-            logger.info('No variants in that report, skipping')
 
 
 if __name__ == '__main__':
