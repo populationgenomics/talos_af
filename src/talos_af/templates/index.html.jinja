@@ -65,34 +65,6 @@
                 </button>
                 <div class="collapse" id="report-help">
                     <div class="card card-body mb-3">
-                        <h5>Symbol Legend</h5>
-
-                        <p class="mb-1">
-                        <i class="bi bi-person-check-fill text-success"></i>
-                        Phenotype match (panel-based): One or more patient HPO terms match HPO terms characteristic of a disease-specific gene panel.
-                        </p>
-
-                        <p class="mb-1">
-                        <i class="bi bi-person-check-fill text-info"></i>
-                        Phenotype match (cohort-based): This gene is included in a PanelApp Australia panel configured for this cohort.
-                        </p>
-
-                        <p class="mb-1">
-                        <i class="bi bi-person-check-fill" style="color:#FF5733"></i>
-                        Phenotype match (HPO-based): One or more patient HPO terms match HPO terms associated with this gene.
-                        </p>
-
-                        <p class="mb-1">
-                        <i class="bi bi-star-fill text-warning"></i>
-                        Genes that have recently been added to the
-                        <a href="https://panelapp-aus.org/panels/137/" target="_blank">Mendeliome gene panel</a>.
-                        </p>
-
-                        <p class="mb-2">
-                        <i class="bi bi-star-fill text-primary"></i>
-                        Genes that have recently been added to a panel matched to this patient’s HPO terms.
-                        </p>
-
                         <h5>ClinvArbitration</h5>
                         <p class="mb-2">
                         ClinVar classifications are aggregated from individual ClinVar submissions using
@@ -113,15 +85,6 @@
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="phenotype-filter" class="form-label">Phenotype match filter</label>
-                    <select id="phenotype-filter" class="form-select form-select-sm" style="max-width: 240px;">
-                        <option value="all" selected>All variants</option>
-                        <option value="has">With phenotype match</option>
-                        <option value="none">Without phenotype match</option>
-                    </select>
-                </div>
-
                 <table class="display" id="variant-table">
 
                     <thead>
@@ -129,7 +92,6 @@
                             <th class="group-separator">Individual</th>
                             <th>Variant</th>
                             <th>Gene (MOI)</th>
-                            <th>Categories</th>
                             <th>First Tagged</th>
                             <th>MANE CSQ</th>
                             <th>ClinvArbitration</th>
@@ -139,7 +101,6 @@
                             <th><input type="text" placeholder="Search Individual"></th>
                             <th><input type="text" placeholder="Search Variant"></th>
                             <th><input type="text" placeholder="Search Gene (MOI)"></th>
-                            <th><input type="text" placeholder="Search Categories"></th>
                             <th><input type="text" placeholder="Search First Tagged"></th>
                             <th><input type="text" placeholder="Search MANE CSQ"></th>
                             <th><input type="text" placeholder="Search ClinVar"></th>
@@ -189,16 +150,7 @@
                         Samples with no candidate variants: {{ zero_categorised_samples|join(', ')|e }}
                     </div>
                     {% endif %}
-                    {% if unused_ext_labels %}
-                    <div class="alert alert-info" role="alert">
-                        Unused external labels:
-                        <ul class="mb-0">
-                            {% for entry in unused_ext_labels %}
-                            <li>{{ entry|tojson }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
+
                     {% if meta_tables %}
                     {% for table_name, table in meta_tables.items() %}
                         <div class="card mb-3">
@@ -334,48 +286,9 @@
             }
         }
 
-        var phenotypeFilter = $('#phenotype-filter');
-
-        $('#variant-table tbody tr').each(function () {
-            if (!this.hasAttribute('data-has-phenotype')) {
-                this.setAttribute('data-has-phenotype', '0');
-            }
-        });
-
-        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-            if (settings.nTable !== $('#variant-table')[0]) {
-                return true;
-            }
-
-            var filterValue = phenotypeFilter.val();
-            if (!filterValue || filterValue === 'all') {
-                return true;
-            }
-
-            var aoData = settings.aoData[dataIndex];
-            var rowNode = aoData && aoData.nTr;
-            if (!rowNode) {
-                return true;
-            }
-
-            var hasPhenotype = rowNode.getAttribute('data-has-phenotype');
-
-            if (filterValue === 'has') {
-                return hasPhenotype === '1';
-            }
-
-            if (filterValue === 'none') {
-                return hasPhenotype !== '1';
-            }
-
-            return true;
-        });
-
         function formatChildRow(rowData) {
             var variantData = rowData.variantData || {};
             var genotypes = rowData.genotypes || {};
-            var phenotypes = rowData.phenotypes || [];
-            var panelDetails = rowData.panelDetails || {};
             var familyMembers = rowData.familyMembers || {};
             var familyDisplay = rowData.familyDisplay || {};
             var supportVars = rowData.supportVars || [];
@@ -389,18 +302,6 @@
         html += '<dt class="col-sm-4">Coordinates</dt><dd class="col-sm-8">';
         html += escapeHtml(rowData.variantCoords) + '<br>' + escapeHtml(rowData.variantChange);
         html += '</dd>';
-
-        if (rowData.variantType) {
-            html += '<dt class="col-sm-4">Source</dt><dd class="col-sm-8">';
-            html += escapeHtml(String(rowData.variantType));
-            html += '</dd>';
-        }
-
-        if (variantData.info && variantData.info.as_filterstatus) {
-            html += '<dt class="col-sm-4">Filter status</dt><dd class="col-sm-8">';
-            html += escapeHtml(String(variantData.info.as_filterstatus));
-            html += '</dd>';
-        }
 
         if (supportVars && supportVars.length > 0) {
             var validSupport = supportVars.filter(function(entry) {
@@ -422,26 +323,13 @@
             }
         }
 
-        if (rowData.variantType === 'StructuralVariant' && variantData.info) {
-            var svLen = variantData.info.svlen;
-            var svType = variantData.info.svtype;
-            if (svType) {
-                html += '<dt class="col-sm-4">Structural details</dt><dd class="col-sm-8">';
-                html += escapeHtml(String(svType));
-                if (svLen !== undefined && svLen !== null) {
-                    html += ' ' + escapeHtml(String(svLen)) + 'bp';
-                }
-                html += '</dd>';
-            }
-        }
-
             html += '<dt class="col-sm-4">Allele Counts</dt><dd class="col-sm-8">';
             if (variantData.info) {
                 var callsetAc = (variantData.info.ac !== undefined && variantData.info.ac !== null) ? variantData.info.ac : 'N/A';
                 var callsetAn = (variantData.info.an !== undefined && variantData.info.an !== null) ? variantData.info.an : 'N/A';
                 html += 'This callset AC: ' + escapeHtml(String(callsetAc)) + ' / AN: ' + escapeHtml(String(callsetAn)) + '<br>';
 
-                if (rowData.variantType === 'SmallVariant' && variantData.info.gnomad_ac !== undefined && variantData.info.gnomad_ac !== null) {
+                if (variantData.info.gnomad_ac !== undefined && variantData.info.gnomad_ac !== null) {
                     var gnomadId = null;
                     if (variantData.coordinates && variantData.coordinates.chrom && variantData.coordinates.ref && variantData.coordinates.alt) {
                         gnomadId = [
@@ -460,118 +348,50 @@
                         gnomadAf = parseFloat(gnomadAfVal).toFixed(5);
                     }
                     html += 'gnomAD 4.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(gnomadId) + '?dataset=gnomad_r4" target="_blank"> AC:' + escapeHtml(String(variantData.info.gnomad_ac)) + ' AF: ' + escapeHtml(String(gnomadAf)) + '</a>';
-                } else if (rowData.variantType === 'StructuralVariant' && variantData.info.gnomad_key) {
-                    var svAfVal = variantData.info['gnomad_v2.1_sv_af'];
-                    var svAf = 'N/A';
-                    if (svAfVal !== undefined && svAfVal !== null && !isNaN(parseFloat(svAfVal))) {
-                        svAf = parseFloat(svAfVal).toFixed(5);
-                    }
-                    html += 'gnomAD v2.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(String(variantData.info.gnomad_key)) + '?dataset=gnomad_sv_r2_1" target="_blank">' + escapeHtml(String(svAf)) + '</a>';
                 }
             }
             html += '</dd>';
 
-            if (rowData.variantType === 'SmallVariant' && variantData.info) {
-                html += '<dt class="col-sm-4">In Silico Predictions</dt><dd class="col-sm-8">';
-                if (variantData.info.alpha_missense_max && variantData.info.alpha_missense_max !== 'missing') {
-                    html += 'AlphaMissense: ' + parseFloat(variantData.info.alpha_missense_max).toFixed(2) + '<br>';
-                }
-                if (variantData.info.splice_ai_delta) {
-                    var variantRef = {
-                        chrom: rowData.variantCoords.split(':')[0],
-                        pos: rowData.variantCoords.split(':')[1],
-                        ref: variantData.coordinates ? variantData.coordinates.ref : '',
-                        alt: variantData.coordinates ? variantData.coordinates.alt : ''
-                    };
-                    html += 'SpliceAI: <a href="' + spliceAiUrl(variantRef) + '" target="_blank">' + parseFloat(variantData.info.splice_ai_delta).toFixed(2) + '</a>';
-                    if (variantData.info.splice_ai_csq && !['missing', 'No_consequence'].includes(variantData.info.splice_ai_csq)) {
-                        html += ' (' + escapeHtml(variantData.info.splice_ai_csq) + ')';
-                    }
-                }
-                html += '</dd>';
-
-                html += '<dt class="col-sm-4">External Links</dt><dd class="col-sm-8">';
-                var variantForLinks = {
+            html += '<dt class="col-sm-4">In Silico Predictions</dt><dd class="col-sm-8">';
+            if (variantData.info.alpha_missense_max && variantData.info.alpha_missense_max !== 'missing') {
+                html += 'AlphaMissense: ' + parseFloat(variantData.info.alpha_missense_max).toFixed(2) + '<br>';
+            }
+            if (variantData.info.splice_ai_delta) {
+                var variantRef = {
                     chrom: rowData.variantCoords.split(':')[0],
                     pos: rowData.variantCoords.split(':')[1],
                     ref: variantData.coordinates ? variantData.coordinates.ref : '',
                     alt: variantData.coordinates ? variantData.coordinates.alt : ''
                 };
-                var genes = rowData.genes ? rowData.genes.split(',') : [];
-                var firstGene = genes[0] ? genes[0].split(':') : ['', ''];
-
-                html += '<a href="' + spliceAiUrl(variantForLinks) + '" target="_blank">SpliceAI</a> | ';
-                html += '<a href="' + ucscUrl(variantForLinks) + '" target="_blank">UCSC</a> | ';
-                if (firstGene[0]) {
-                    html += '<a href="' + decipherUrl(firstGene[0], true) + '" target="_blank">Decipher</a> ';
-                    html += '<a href="' + decipherUrl(firstGene[0], false) + '" target="_blank">(Clinical)</a> | ';
+                html += 'SpliceAI: <a href="' + spliceAiUrl(variantRef) + '" target="_blank">' + parseFloat(variantData.info.splice_ai_delta).toFixed(2) + '</a>';
+                if (variantData.info.splice_ai_csq && !['missing', 'No_consequence'].includes(variantData.info.splice_ai_csq)) {
+                    html += ' (' + escapeHtml(variantData.info.splice_ai_csq) + ')';
                 }
-                if (firstGene[1]) {
-                    html += '<a href="' + omimGeneUrl(firstGene[1]) + '" target="_blank">OMIM</a>';
-                }
-                html += '</dd>';
-            } else if (rowData.variantType === 'StructuralVariant' && variantData.info) {
-                html += '<dt class="col-sm-4">Additional</dt><dd class="col-sm-8">';
-                var lof = variantData.info.lof;
-                if (lof) {
-                    var lofText = Array.isArray(lof) ? lof.join(', ') : String(lof);
-                    html += 'LoF Genes: ' + escapeHtml(lofText) + '<br>';
-                }
-                var algorithms = variantData.info.algorithms;
-                if (algorithms) {
-                    var algText = Array.isArray(algorithms) ? algorithms.join(', ') : String(algorithms);
-                    html += 'Algorithms: ' + escapeHtml(algText) + '<br>';
-                }
-                var evidence = variantData.info.evidence;
-                if (evidence) {
-                    var evidenceText = Array.isArray(evidence) ? evidence.join(', ') : String(evidence);
-                    html += 'Evidence Types: ' + escapeHtml(evidenceText) + '<br>';
-                }
-                if (rowData.genes) {
-                    var genesList = rowData.genes.split(',');
-                    var first = genesList[0] ? genesList[0].split(':') : ['', ''];
-                    if (first[1]) {
-                        html += '<a href="' + omimGeneUrl(first[1]) + '" target="_blank">OMIM</a>';
-                    }
-                }
-                html += '</dd>';
             }
-
-            html += '</dl></div></div></div>';
-
-            html += '<div class="col-md-6"><div class="card"><div class="card-body">';
-            html += '<h5 class="card-title">Family Information</h5><dl class="row">';
-
-            html += '<dt class="col-sm-4">Genotypes</dt><dd class="col-sm-8">';
-            Object.keys(genotypes).forEach(function(sampleId) {
-                if (familyMembers[sampleId] && familyDisplay[sampleId] && genotypes[sampleId]) {
-                    var member = familyMembers[sampleId];
-                    var sex = member.sex && member.sex.value ? member.sex.value : member.sex;
-                    var affected = member.affected;
-                    html += pedSymbol(sex, affected) + ' ';
-                    html += escapeHtml(familyDisplay[sampleId]) + ' - ' + escapeHtml(genotypes[sampleId]) + '<br>';
-                }
-            });
             html += '</dd>';
 
-            html += '<dt class="col-sm-4">Phenotypes</dt><dd class="col-sm-8">';
-            phenotypes.forEach(function(phenotype) {
-                if (phenotype && phenotype.id && phenotype.label) {
-                    html += escapeHtml(phenotype.id) + ' - ' + escapeHtml(phenotype.label) + '<br>';
-                }
-            });
+            html += '<dt class="col-sm-4">External Links</dt><dd class="col-sm-8">';
+            var variantForLinks = {
+                chrom: rowData.variantCoords.split(':')[0],
+                pos: rowData.variantCoords.split(':')[1],
+                ref: variantData.coordinates ? variantData.coordinates.ref : '',
+                alt: variantData.coordinates ? variantData.coordinates.alt : ''
+            };
+            var genes = rowData.genes ? rowData.genes.split(',') : [];
+            var firstGene = genes[0] ? genes[0].split(':') : ['', ''];
+
+            html += '<a href="' + spliceAiUrl(variantForLinks) + '" target="_blank">SpliceAI</a> | ';
+            html += '<a href="' + ucscUrl(variantForLinks) + '" target="_blank">UCSC</a> | ';
+            if (firstGene[0]) {
+                html += '<a href="' + decipherUrl(firstGene[0], true) + '" target="_blank">Decipher</a> ';
+                html += '<a href="' + decipherUrl(firstGene[0], false) + '" target="_blank">(Clinical)</a> | ';
+            }
+            if (firstGene[1]) {
+                html += '<a href="' + omimGeneUrl(firstGene[1]) + '" target="_blank">OMIM</a>';
+            }
             html += '</dd>';
 
-            html += '<dt class="col-sm-4">Panels</dt><dd class="col-sm-8">';
-            Object.keys(panelDetails).forEach(function(panelId) {
-                var panel = panelDetails[panelId];
-                if (panel && panel.name) {
-                    html += escapeHtml(panel.name) + ' (' + escapeHtml(panelId) + ') v.' + escapeHtml(panel.version || 'N/A') + '<br>';
-                }
-            });
-            html += '</dd>';
-
-            html += '</dl></div></div>';
+            html += '</dl></div></div></div></div>';
 
         html += '</div></div>';
 
@@ -674,7 +494,6 @@
                 $(this).find('i').removeClass('bi-dash-square').addClass('bi-plus-square');
             } else {
                 var rowData = {
-                    variantType: tr.attr('data-variant-type') || '',
                     sampleName: tr.attr('data-sample-name') || '',
                     sampleExtId: tr.attr('data-sample-ext-id') || '',
                     familyId: tr.attr('data-family-id') || '',
@@ -683,8 +502,6 @@
                     genes: tr.attr('data-genes') || '',
                     variantData: parseDataAttribute(tr, 'data-variant-data', {}),
                     genotypes: parseDataAttribute(tr, 'data-genotypes', {}),
-                    phenotypes: parseDataAttribute(tr, 'data-phenotypes', []),
-                    panelDetails: parseDataAttribute(tr, 'data-panel-details', {}),
                     familyMembers: parseDataAttribute(tr, 'data-family-members', {}),
                     familyDisplay: parseDataAttribute(tr, 'data-family-display', {}),
                     supportVars: parseDataAttribute(tr, 'data-support-vars', []),
@@ -701,10 +518,6 @@
         var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         [].slice.call(tooltipTriggerList).forEach(function(tooltipTriggerEl) {
             new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        phenotypeFilter.on('change', function () {
-            table.draw();
         });
 
         $('#variant-table tbody').on('click', 'tr.group-start', function () {

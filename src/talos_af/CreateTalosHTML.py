@@ -174,7 +174,7 @@ class HTMLBuilder:
 
         # if no variants were found, this can fail with a NoVariantsFoundException error
         # we ignore that here, and catch it in the outer scope
-        # (summary_table, zero_cat_samples, unused_ext_labels) = self.get_summary_stats()
+        # (summary_table, zero_cat_samples) = self.get_summary_stats()
 
         # if these attributes are in the config we'll end up with a more descriptive report title
         dataset = config_retrieve('dataset', None)
@@ -202,7 +202,6 @@ class HTMLBuilder:
 
         summary_table = None
         zero_cat_samples: list[str] = []
-        unused_ext_labels: list[dict] = []
 
         # Build summary table from metadata.variant_breakdown if present
         if self.metadata.variant_breakdown:
@@ -242,7 +241,6 @@ class HTMLBuilder:
             for entry in self.metadata.unused_ext_labels:
                 sam = entry.get('sample')
                 entry['sample_ext'] = self.ext_id_map.get(sam, sam) if isinstance(sam, str) else sam
-                unused_ext_labels.append(entry)
 
         config_options = config_retrieve([])
         config_json = json.dumps(config_options, indent=2, sort_keys=True)
@@ -258,7 +256,6 @@ class HTMLBuilder:
             'meta_tables': meta_tables,
             'summary_table': summary_table,
             'zero_categorised_samples': zero_cat_samples,
-            'unused_ext_labels': unused_ext_labels,
             'config_json': config_json,
         }
 

@@ -8,8 +8,6 @@
     data-genes="{{variant.genes|map('join', ':')|join(',')|e}}"
     data-variant-data='{{variant.var_data_json|tojson}}'
     data-genotypes='{{variant.genotypes_json|tojson}}'
-    data-phenotypes='{{sample.phenotypes_json|tojson}}'
-    data-panel-details='{{sample.panel_details_json|tojson}}'
     data-family-members='{{sample.family_members_json|tojson}}'
     data-family-display='{{sample.family_display_json|tojson}}'
     data-support-vars='{{variant.support_vars_json|tojson}}'
@@ -45,7 +43,7 @@
         {% endif %}
         <br>
         {{ variant.change|replace("->", ">")|e }}
-        {% if variant.var_type == 'SmallVariant' and variant.var_data.info %}
+
         {% set gnomad_url = 'https://gnomad.broadinstitute.org/variant/' ~ (variant|urlencode) ~ '?dataset=gnomad_r4' %}
         <br>
         <small class="text-muted">
@@ -54,40 +52,12 @@
             | AF: <a href="{{ gnomad_url }}" target="_blank">{{ variant.var_data.info.gnomad_af | round(4) }}</a>
             {% endif %}
         </small>
-        {% elif variant.var_type == 'StructuralVariant' and variant.var_data.info and variant.var_data.info.gnomad_key %}
-        <br>
-        <small class="text-muted">
-            gnomAD v2.1: <a href="https://gnomad.broadinstitute.org/variant/{{variant.var_data.info.gnomad_key|urlencode}}?dataset=gnomad_sv_r2_1" target="_blank">{{ variant.var_data.info['gnomad_v2.1_sv_af'] | round(4) }}</a>
-        </small>
-        {% endif %}
     </td>
     <td>
         {# Gene symbol #}
         {% for gene in variant.genes %}
-        <a href="https://panelapp-aus.org/panels/entities/{{gene[1]|urlencode}}" target="_blank">{{gene[1]|e}}</a>
+            <a href="https://panelapp-aus.org/panels/entities/{{gene[1]|urlencode}}" target="_blank">{{gene[1]|e}}</a>
         {% endfor %}
-        {% if variant.forced_matches or variant.phenotype_matches or variant.pheno_matches %}
-        {% if variant.pheno_matches %}
-        <i class="bi-person-check-fill text-success ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="Phenotype-Panel match: {{variant.pheno_matches|join(', ')|e}}"></i>
-        {% endif %}
-        {% if variant.forced_matches %}
-        <i class="bi-person-check-fill text-info ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="Cohort panels: {{variant.forced_matches|join(', ')|e}}"></i>
-        {% endif %}
-        {% if variant.phenotype_matches %}
-        <i class="bi-person-check-fill ms-1" style="color: #FF5733" data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="Gene-Phenotype match: {{variant.phenotype_matches|join(', ')|e}}"></i>
-        {% endif %}
-        {% endif %}
-        {% if variant.new_in_base_panel %}
-        <i class="bi bi-star-fill text-warning" data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="Gene new in Mendeliome"></i>
-        {% endif %}
-        {% if variant.new_panels %}
-        <i class="bi bi-star-fill text-primary" data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="Gene new in: {{ variant.new_panels|join(', ')|e }} "></i>
-        {% endif %}
         <br>
         <span class="text-muted">
         {{ variant.reasons|replace("Autosomal Recessive Homozygous","AR (Hom)")
@@ -96,10 +66,6 @@
         |replace("X_Male","XLR (Male)")
         | e }}
         </span>
-    </td>
-    <td>
-        {# Categories #}
-        {{variant.categories|join(", ")|replace("_", " ")|e}}
     </td>
     <td>
         {# First Tagged #}
