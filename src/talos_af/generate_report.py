@@ -21,7 +21,7 @@ from cloudpathlib.anypath import to_anypath
 from loguru import logger
 
 from talos_af.config import config_retrieve
-from talos_af.models import ReportableVariant, ResultsAf, VariantAf
+from talos_af.models import AcmgEntry, ReportableVariant, ResultsAf, VariantAf
 
 JINJA_TEMPLATE_DIR = Path(__file__).absolute().parent / 'templates'
 
@@ -133,7 +133,7 @@ class HTMLBuilder:
             sample_variants = [
                 Variant(
                     # the annotations
-                    results_object.variants,
+                    results_object,
                     # this individual event
                     instance,
                 )
@@ -160,6 +160,35 @@ class HTMLBuilder:
                 }
                 for key in ['run_date']
             ),
+            'Specification': pd.DataFrame(
+                {
+                    'Symbol': section.gene,
+                    'MOI': section.moi,
+                    'Gene ID': section.gene_id,
+                    'Reportable': section.reportable,
+                    'Specific Type': section.specific_type,
+                }
+                for section in self.metadata.specification.values()
+            ),
+        }
+
+    @staticmethod
+    def pandify_acmg_spec(acmg_spec: dict[str, AcmgEntry]) -> dict[str, pd.DataFrame]:
+        """
+        parses into a general table
+        """
+
+        return {
+            'Specification': pd.DataFrame(
+                {
+                    'Symbol': section.gene,
+                    'MOI': section.moi,
+                    'Gene ID': section.gene_id,
+                    'Reportable': section.reportable,
+                    'Specific Type': section.specific_type,
+                }
+                for section in acmg_spec.values()
+            ),
         }
 
     def write_html(self, output_filepath: str):
@@ -185,7 +214,14 @@ class HTMLBuilder:
         if 'Meta' in meta_tables:
             meta_tables = {'Run Metadata': meta_tables.pop('Meta')} | meta_tables
 
-        config_json = json.dumps(config_retrieve([]), indent=2, sort_keys=True)
+        serialisable_spec = {
+            'acmg_spec': {ensg: data.model_dump() for ensg, data in self.metadata.specification.items()}
+        }
+        config_json = json.dumps(
+            config_retrieve([]) | serialisable_spec,
+            indent=2,
+            sort_keys=True,
+        )
 
         template_context = {
             'run_date': self.metadata.run_date,
@@ -325,12 +361,15 @@ class Variant:
 
         return f'{self.ref}->{self.alt}'
 
-    def __init__(self, report_variants: dict[str, VariantAf], instance: ReportableVariant):  # noqa: PLR0915
+    def __init__(self, report_object: ResultsAf, instance: ReportableVariant):  # noqa: PLR0915
         # pick out the annotations for this one variant
         self.var_id = instance.var_id
-        variant_annotations = report_variants[self.var_id]
+
+        variant_annotations = report_object.variants[self.var_id]
 
         self.gene: str = variant_annotations.gene
+
+        self.acmg: dict[str, str] = report_object.metadata.specification[variant_annotations.gene]
 
         self.high_impact = variant_annotations.high_impact
         self.clinvar_path = variant_annotations.clinvar_path
@@ -344,10 +383,10 @@ class Variant:
         self.change = self.get_var_change()
 
         self.first_tagged: str = instance.first_seen
-        self.support_vars = list(instance.support_vars)
+        self.support_vars = ', '.join(sorted(instance.support_vars))
         self.transcript_consequences = variant_annotations.transcript_consequences
 
-        # Summaries CSQ strings
+        # Summarise CSQ strings
         (self.csq, self.hgvsps) = self.parse_csq()
 
         # pull up the highest AlphaMissense score, if present
@@ -404,6 +443,8 @@ class Variant:
             csq_string = ', '.join(consequences)
         elif nmd_consequences:
             csq_string = 'NMD only: ' + ', '.join(nmd_consequences)
+        else:
+            csq_string = 'None?'
 
         p_changes = ', '.join(p_changes)
 

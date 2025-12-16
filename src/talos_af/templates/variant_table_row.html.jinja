@@ -8,7 +8,6 @@
     data-variant-change="{{variant.change|e}}"
     data-gene="{{variant.gene|e}}"
     data-variant-info='{{variant.info|tojson}}'
-    data-support-vars='{{variant.support_vars}}'
     data-transcript-consequences='{{variant.transcript_consequences|tojson}}'
 >
     <td style="white-space: nowrap" class="details-control">
@@ -32,7 +31,6 @@
         {% else %}
             {{variant.chrom|e}}:{{variant.pos}}
         {% endif %}
-        <br>
         {{ variant.change|replace("->", ">")|e }}
 
         {% set gnomad_url = 'https://gnomad.broadinstitute.org/variant/' ~ (variant|urlencode) ~ '?dataset=gnomad_r4' %}
@@ -46,15 +44,13 @@
     </td>
     <td>
         {# Gene symbol #}
-        <a href="https://panelapp-aus.org/panels/entities/{{variant.gene|urlencode}}" target="_blank">{{variant.gene|e}}</a>
-        <br>
-        <span class="text-muted">
-        {{ variant.reasons|replace("Autosomal Recessive Homozygous","AR (Hom)")
-        |replace("Autosomal Recessive Comp-Het","AR (Comp-Het)")
-        |replace("Autosomal Dominant","AD")
-        |replace("X_Male","XLR (Male)")
-        | e }}
-        </span>
+        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a> {{ variant.acmg.moi|e }} {% if variant.acmg.reportable != "all" %} ({{ variant.acmg.specific_type }} only) {% endif %}
+    </td>
+    <td>
+        {# CompHet #}
+        {% if variant.support_vars %}
+            {{ variant.support_vars }}
+        {% endif %}
     </td>
     <td>
         {# First Tagged #}

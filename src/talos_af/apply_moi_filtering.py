@@ -81,6 +81,7 @@ def main(
         metadata=models.MetadataAf(
             acmg_path=acmg_spec_path,
             dataset=dataset_name,
+            specification=acmg_spec,
         ),
     )
 

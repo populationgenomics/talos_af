@@ -29,7 +29,7 @@
         }
 
         .child-row-content {
-            max-width: 1200px;
+            max-width: 1000px;
             margin-left: 0;
             margin-right: auto;
             text-align: left;
@@ -81,6 +81,7 @@
                             <th class="group-separator">Individual</th>
                             <th>Variant</th>
                             <th>Gene (MOI)</th>
+                            <th>CompHet</th>
                             <th>First Tagged</th>
                             <th>CSQ</th>
                             <th>ClinvArbitration</th>
@@ -89,6 +90,7 @@
                             <th><input type="text" placeholder="Search Individual"></th>
                             <th><input type="text" placeholder="Search Variant"></th>
                             <th><input type="text" placeholder="Search Gene (MOI)"></th>
+                            <th><input type="text" placeholder="Search CompHet"></th>
                             <th><input type="text" placeholder="Search First Tagged"></th>
                             <th><input type="text" placeholder="Search CSQ"></th>
                             <th><input type="text" placeholder="Search ClinVar"></th>
@@ -244,24 +246,17 @@
             var varPos = rowData.pos;
             var varRef = rowData.ref;
             var varAlt = rowData.alt;
-            var supportVars = rowData.supportVars || [];
 
-        var transcriptConsequences = rowData.transcriptConsequences || [];
+            var transcriptConsequences = rowData.transcriptConsequences || [];
 
-        var html = '<div class="child-row-content"><div class="row">';
+            var html = '<div class="child-row-content"><div class="row">';
 
-        html += '<div class="col-md-6"><div class="card"><div class="card-body">';
-        html += '<h5 class="card-title">Variant Details</h5><dl class="row">';
+            html += '<div class="col-md-6"><div class="card"><div class="card-body">';
+            html += '<h5 class="card-title">Variant Details</h5><dl class="row">';
 
-        html += '<dt class="col-sm-4">Coordinates</dt><dd class="col-sm-8">';
-        html += escapeHtml(rowData.variantCoords) + '<br>' + escapeHtml(rowData.variantChange);
-        html += '</dd>';
-
-        if (supportVars && supportVars.length > 0) {
-            html += '<dt class="col-sm-4">Supporting variants</dt><dd class="col-sm-8">';
-            supportVars.join(", ")
+            html += '<dt class="col-sm-4">Coordinates</dt><dd class="col-sm-8">';
+            html += escapeHtml(rowData.variantCoords) + '<br>' + escapeHtml(rowData.variantChange);
             html += '</dd>';
-        }
 
             html += '<dt class="col-sm-4">Allele Counts</dt><dd class="col-sm-8">';
             var callsetAc = (variantInfo.ac !== undefined && variantInfo.ac !== null) ? variantInfo.ac : 'N/A';
@@ -308,7 +303,7 @@
             html += '<a href="' + omimGeneUrl(gene) + '" target="_blank">OMIM</a>';
             html += '</dd></dl></div></div></div></div>';
 
-        html += '</div></div>';
+            html += '</div></div>';
 
             if (transcriptConsequences && transcriptConsequences.length > 0) {
                 html += '<div class="col-12 mt-3"><div class="card"><div class="card-body">';
@@ -415,7 +410,6 @@
                     pos: parseDataAttribute(tr, 'data-variant-pos', {}),
                     ref: parseDataAttribute(tr, 'data-variant-ref', {}),
                     alt: parseDataAttribute(tr, 'data-variant-alt', {}),
-                    supportVars: parseDataAttribute(tr, 'data-support-vars', []),
                     transcriptConsequences: parseDataAttribute(tr, 'data-transcript-consequences', [])
                 };
 
