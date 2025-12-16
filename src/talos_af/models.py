@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from talos_af.date_string import get_date_string
@@ -80,7 +78,7 @@ class AcmgEntry(BaseModel):
     nm_id: str
     enst: str
     reportable: str
-    specific_type: Optional[str] = 'N/A'
+    specific_type: str | None = 'N/A'
 
 
 class MetadataAf(BaseModel):
@@ -90,7 +88,6 @@ class MetadataAf(BaseModel):
 
     acmg_path: str
     run_date: str = get_date_string()
-    dataset: str
     specification: dict[str, AcmgEntry] = Field(default_factory=dict)
 
 

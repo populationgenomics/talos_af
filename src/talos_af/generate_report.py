@@ -21,7 +21,7 @@ from cloudpathlib.anypath import to_anypath
 from loguru import logger
 
 from talos_af.config import config_retrieve
-from talos_af.models import AcmgEntry, ReportableVariant, ResultsAf, VariantAf
+from talos_af.models import ReportableVariant, ResultsAf
 
 JINJA_TEMPLATE_DIR = Path(__file__).absolute().parent / 'templates'
 
@@ -172,25 +172,6 @@ class HTMLBuilder:
             ),
         }
 
-    @staticmethod
-    def pandify_acmg_spec(acmg_spec: dict[str, AcmgEntry]) -> dict[str, pd.DataFrame]:
-        """
-        parses into a general table
-        """
-
-        return {
-            'Specification': pd.DataFrame(
-                {
-                    'Symbol': section.gene,
-                    'MOI': section.moi,
-                    'Gene ID': section.gene_id,
-                    'Reportable': section.reportable,
-                    'Specific Type': section.specific_type,
-                }
-                for section in acmg_spec.values()
-            ),
-        }
-
     def write_html(self, output_filepath: str):
         """
         Uses the results to create the HTML tables
@@ -226,7 +207,7 @@ class HTMLBuilder:
         template_context = {
             'run_date': self.metadata.run_date,
             'samples': self.samples,
-            'report_title': f'Talos AF Report',
+            'report_title': 'Talos AF Report',
             'meta_tables': meta_tables,
             'config_json': config_json,
         }
@@ -361,7 +342,7 @@ class Variant:
 
         return f'{self.ref}->{self.alt}'
 
-    def __init__(self, report_object: ResultsAf, instance: ReportableVariant):  # noqa: PLR0915
+    def __init__(self, report_object: ResultsAf, instance: ReportableVariant):
         # pick out the annotations for this one variant
         self.var_id = instance.var_id
 
@@ -420,23 +401,11 @@ class Variant:
                 nmd_consequences.update(variant_csqs)
                 continue
 
-            else:
-                consequences.update(variant_csqs)
+            consequences.update(variant_csqs)
 
             # todo we don't get ENSP annotations here
             if aa := csq.get('amino_acid_change'):
                 p_changes.add(aa)
-
-            # TODO (MattWellie) add HGVS c. notation
-            # TODO (MattWellie) add HGVS p. notation
-            # elif csq['hgvsc']:
-            #     hgvsc = csq['hgvsc'].split(':')[1]
-            #
-            #     # if massive indel base stretches are included, replace with a numerical length
-            #     if match := CDNA_SQUASH.search(hgvsc):
-            #         hgvsc.replace(match.group('bases'), str(len(match.group('bases'))))
-            #
-            #     p_changes.add(hgvsc)
 
         # simplify the consequence strings
         if consequences:
