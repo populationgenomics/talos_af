@@ -195,21 +195,12 @@ class HTMLBuilder:
         if 'Meta' in meta_tables:
             meta_tables = {'Run Metadata': meta_tables.pop('Meta')} | meta_tables
 
-        serialisable_spec = {
-            'acmg_spec': {ensg: data.model_dump() for ensg, data in self.metadata.specification.items()}
-        }
-        config_json = json.dumps(
-            config_retrieve([]) | serialisable_spec,
-            indent=2,
-            sort_keys=True,
-        )
-
         template_context = {
             'run_date': self.metadata.run_date,
             'samples': self.samples,
             'report_title': 'Talos AF Report',
             'meta_tables': meta_tables,
-            'config_json': config_json,
+            'config_json': json.dumps(config_retrieve([]), indent=2, sort_keys=True),
         }
 
         # write all HTML content to the output file in one go

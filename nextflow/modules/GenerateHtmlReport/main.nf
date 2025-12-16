@@ -5,6 +5,7 @@ process GenerateHtmlReport {
 
     input:
         path results
+        path config
 
     output:
         path "${params.cohort}_results.html"

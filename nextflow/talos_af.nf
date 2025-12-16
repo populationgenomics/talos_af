@@ -120,5 +120,6 @@ workflow {
 
     GenerateHtmlReport(
         ApplyMoiFiltering.out,
+        ch_config,
     )
 }
