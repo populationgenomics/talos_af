@@ -102,7 +102,7 @@ class HTMLBuilder:
 
     def __init__(
         self,
-        results_dict: ResultData,
+        results_dict: ResultsAf,
         link_engine: 'LinkEngine | None' = None,
         ext_id_map: dict[str, str] | None = None,
     ):
@@ -155,12 +155,6 @@ class HTMLBuilder:
                 }
                 for key in ['run_datetime', 'version']
             ),
-            'Families': pd.DataFrame(
-                [
-                    {'family_size': fam_type, 'tally': fam_count}
-                    for fam_type, fam_count in sorted(self.metadata.family_breakdown.items())
-                ],
-            ),
         }
 
     def write_html(self, output_filepath: str):
@@ -174,17 +168,13 @@ class HTMLBuilder:
 
         # if no variants were found, this can fail with a NoVariantsFoundException error
         # we ignore that here, and catch it in the outer scope
-        # (summary_table, zero_cat_samples) = self.get_summary_stats()
+        # summary_table = self.get_summary_stats()
 
         # if these attributes are in the config we'll end up with a more descriptive report title
         dataset = config_retrieve('dataset', None)
         seq_type = config_retrieve('sequencing_type', None)
-        if 'long_read' in config_retrieve([]):
-            long_read = 'long_read' if config_retrieve('long_read') else 'short-read'
-        else:
-            long_read = None
 
-        extra_detail = ', '.join(x for x in [dataset, seq_type, long_read] if x)
+        extra_detail = ', '.join(x for x in [dataset, seq_type] if x)
 
         meta_tables_raw = self.read_metadata()
         meta_tables = {
@@ -201,7 +191,6 @@ class HTMLBuilder:
             meta_tables = {'Run Metadata': meta_tables.pop('Meta')} | meta_tables
 
         summary_table = None
-        zero_cat_samples: list[str] = []
 
         # Build summary table from metadata.variant_breakdown if present
         if self.metadata.variant_breakdown:
@@ -215,6 +204,7 @@ class HTMLBuilder:
             # round mean to 3 decimals if present and rename columns for display
             if 'mean' in summary_df.columns:
                 summary_df['mean'] = summary_df['mean'].round(3)
+
             summary_df = summary_df.rename(
                 columns={
                     'total': 'Total',
@@ -232,30 +222,16 @@ class HTMLBuilder:
                 'rows': summary_df.to_dict(orient='records'),
             }
 
-        # Map samples_with_no_variants to external IDs if available
-        if getattr(self.metadata, 'samples_with_no_variants', None):
-            zero_cat_samples = [self.ext_id_map.get(sam, sam) for sam in self.metadata.samples_with_no_variants]
-
-        # Prepare unused external labels, including external sample IDs if possible
-        if getattr(self.metadata, 'unused_ext_labels', None):
-            for entry in self.metadata.unused_ext_labels:
-                sam = entry.get('sample')
-                entry['sample_ext'] = self.ext_id_map.get(sam, sam) if isinstance(sam, str) else sam
-
         config_options = config_retrieve([])
         config_json = json.dumps(config_options, indent=2, sort_keys=True)
 
         template_context = {
-            # 'metadata': self.metadata,
-            'index_path': f'../{Path(output_filepath).name}',
             'run_datetime': self.metadata.run_datetime,
             'samples': self.samples,
             'report_title': f'Talos Report: {extra_detail}',
-            # 'solved': self.solved,
             'type': 'whole_cohort',
             'meta_tables': meta_tables,
             'summary_table': summary_table,
-            'zero_categorised_samples': zero_cat_samples,
             'config_json': config_json,
         }
 
@@ -290,12 +266,7 @@ class Sample:
         self.metadata = metadata
         self.name = name
         self.family_id = metadata.family_id
-        self.family_members = metadata.members
         self.ext_id = html_builder.ext_id_map.get(name, name)
-        self.family_display: dict[str, str] = {}
-
-        for member_id in metadata.members:
-            self.family_display[member_id] = member_id
 
         # create a url link out to the sample-level data
         if html_builder.link_engine:
@@ -314,15 +285,6 @@ class Sample:
             # the report can contain results found previously but not now, unsure if we want these reported
             if report_variant.found_in_current_run
         ]
-
-        self.family_members_json = (
-            {member_id: member.model_dump(mode='json') for member_id, member in self.family_members.items()}
-            if hasattr(self, 'family_members') and self.family_members
-            else {}
-        )
-
-        # Pre-serialize family_display (should be simple dict, but let's be safe)
-        self.family_display_json = dict(self.family_display) if hasattr(self, 'family_display') else {}
 
     def __str__(self):
         return self.name
@@ -426,7 +388,6 @@ class Variant:
 
     def __init__(self, report_variant: VariantAf, sample: Sample, html_builder: HTMLBuilder):  # noqa: PLR0915
         self.var_data = report_variant.var_data
-        self.var_type = report_variant.var_data.__class__.__name__
         self.chrom = report_variant.var_data.coordinates.chrom
         self.pos = report_variant.var_data.coordinates.pos
         self.ref = report_variant.var_data.coordinates.ref
@@ -436,13 +397,8 @@ class Variant:
         self.support_vars = report_variant.support_vars
         self.warning_flags = report_variant.flags
 
-        self.genotypes = report_variant.genotypes
-
         # List of (gene_id, symbol)
-        # todo where are genes coming from
-        self.genes: list[tuple[str, str]] = []
-        for gene_id in report_variant.gene.split(','):
-            self.genes.append((gene_id, 'symbol'))
+        self.gene: str = report_variant.gene
 
         # Summaries CSQ strings
         (self.mane_csq, self.mane_hgvsps) = self.parse_csq()
@@ -467,7 +423,6 @@ class Variant:
         self.var_data_json = self.var_data.model_dump(mode='json') if self.var_data else {}
 
         # Pre-serialize other potentially complex objects
-        self.genotypes_json = dict(self.genotypes) if hasattr(self, 'genotypes') else {}
         self.support_vars_json = []
         if hasattr(self, 'support_vars') and self.support_vars:
             for var_string in self.support_vars:

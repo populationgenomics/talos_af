@@ -145,11 +145,6 @@
                         </div>
                     </div>
                     {% endif %}
-                    {% if zero_categorised_samples %}
-                    <div class="alert alert-warning" role="alert">
-                        Samples with no candidate variants: {{ zero_categorised_samples|join(', ')|e }}
-                    </div>
-                    {% endif %}
 
                     {% if meta_tables %}
                     {% for table_name, table in meta_tables.items() %}
@@ -288,9 +283,6 @@
 
         function formatChildRow(rowData) {
             var variantData = rowData.variantData || {};
-            var genotypes = rowData.genotypes || {};
-            var familyMembers = rowData.familyMembers || {};
-            var familyDisplay = rowData.familyDisplay || {};
             var supportVars = rowData.supportVars || [];
         var transcriptConsequences = rowData.transcriptConsequences || [];
 
@@ -329,7 +321,7 @@
                 var callsetAn = (variantData.info.an !== undefined && variantData.info.an !== null) ? variantData.info.an : 'N/A';
                 html += 'This callset AC: ' + escapeHtml(String(callsetAc)) + ' / AN: ' + escapeHtml(String(callsetAn)) + '<br>';
 
-                if (variantData.info.gnomad_ac !== undefined && variantData.info.gnomad_ac !== null) {
+                if (variantData.info.gnomad_ac_joint !== undefined && variantData.info.gnomad_ac_joint !== null) {
                     var gnomadId = null;
                     if (variantData.coordinates && variantData.coordinates.chrom && variantData.coordinates.ref && variantData.coordinates.alt) {
                         gnomadId = [
@@ -342,12 +334,12 @@
                     if (!gnomadId) {
                         gnomadId = rowData.variantCoords.replace(':', '-');
                     }
-                    var gnomadAfVal = variantData.info.gnomad_af;
+                    var gnomadAfVal = variantData.info.gnomad_af_joint;
                     var gnomadAf = 'N/A';
                     if (gnomadAfVal !== undefined && gnomadAfVal !== null && !isNaN(parseFloat(gnomadAfVal))) {
                         gnomadAf = parseFloat(gnomadAfVal).toFixed(5);
                     }
-                    html += 'gnomAD 4.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(gnomadId) + '?dataset=gnomad_r4" target="_blank"> AC:' + escapeHtml(String(variantData.info.gnomad_ac)) + ' AF: ' + escapeHtml(String(gnomadAf)) + '</a>';
+                    html += 'gnomAD 4.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(gnomadId) + '?dataset=gnomad_r4" target="_blank"> AC:' + escapeHtml(String(variantData.info.gnomad_ac_joint)) + ' AF: ' + escapeHtml(String(gnomadAf)) + '</a>';
                 }
             }
             html += '</dd>';
@@ -377,8 +369,7 @@
                 ref: variantData.coordinates ? variantData.coordinates.ref : '',
                 alt: variantData.coordinates ? variantData.coordinates.alt : ''
             };
-            var genes = rowData.genes ? rowData.genes.split(',') : [];
-            var firstGene = genes[0] ? genes[0].split(':') : ['', ''];
+            var gene = rowData.gene;
 
             html += '<a href="' + spliceAiUrl(variantForLinks) + '" target="_blank">SpliceAI</a> | ';
             html += '<a href="' + ucscUrl(variantForLinks) + '" target="_blank">UCSC</a> | ';
@@ -499,11 +490,8 @@
                     familyId: tr.attr('data-family-id') || '',
                     variantCoords: tr.attr('data-variant-coords') || '',
                     variantChange: tr.attr('data-variant-change') || '',
-                    genes: tr.attr('data-genes') || '',
+                    gene: tr.attr('data-gene') || '',
                     variantData: parseDataAttribute(tr, 'data-variant-data', {}),
-                    genotypes: parseDataAttribute(tr, 'data-genotypes', {}),
-                    familyMembers: parseDataAttribute(tr, 'data-family-members', {}),
-                    familyDisplay: parseDataAttribute(tr, 'data-family-display', {}),
                     supportVars: parseDataAttribute(tr, 'data-support-vars', []),
                     transcriptConsequences: parseDataAttribute(tr, 'data-transcript-consequences', [])
                 };
