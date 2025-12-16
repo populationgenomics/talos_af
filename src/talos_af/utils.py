@@ -240,8 +240,8 @@ def organise_csq(
         am_class = str(var_details.pop('am_class'))
         am_score = float(var_details.pop('am_score'))
         am_dict[transcript] = {
-            'class': am_class,
-            'score': am_score,
+            'am_class': am_class,
+            'am_score': am_score,
         }
     else:
         var_details.pop('am_transcript', None)

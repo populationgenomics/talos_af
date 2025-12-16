@@ -21,7 +21,7 @@ from cloudpathlib.anypath import to_anypath
 from loguru import logger
 
 from talos_af.config import config_retrieve
-from talos_af.models import ResultsAf, VariantAf
+from talos_af.models import ReportableVariant, ResultsAf, VariantAf
 
 JINJA_TEMPLATE_DIR = Path(__file__).absolute().parent / 'templates'
 
@@ -102,13 +102,13 @@ class HTMLBuilder:
 
     def __init__(
         self,
-        results_dict: ResultsAf,
+        results_object: ResultsAf,
         link_engine: 'LinkEngine | None' = None,
         ext_id_map: dict[str, str] | None = None,
     ):
         """
         Args:
-            results_dict (ResultData): the results object
+            results_object (ResultsAf): the results object
             link_engine (LinkEngine, optional): the link engine to generate hyperlinks with
             ext_id_map (dict[str, str], optional): a mapping of sample IDs to external IDs, optional
         """
@@ -121,24 +121,31 @@ class HTMLBuilder:
         # take the link-generating instance (can be None)
         self.link_engine = link_engine
 
-        self.metadata = results_dict.metadata
+        self.metadata = results_object.metadata
 
         # Process samples and variants
         self.samples: list[Sample] = []
-        for sample, content in results_dict.results.items():
-            # skip for now if there's nothing to show
-            if not content.variants:
+
+        for sample, variant_instances in results_object.instances.items():
+            if not variant_instances:
                 continue
 
+            sample_variants = [
+                Variant(
+                    # the annotations
+                    results_object.variants,
+                    # this individual event
+                    instance,
+                )
+                for instance in variant_instances
+            ]
             self.samples.append(
                 Sample(
                     name=sample,
-                    metadata=content.metadata,
-                    variants=content.variants,
-                    html_builder=self,
+                    variants=sample_variants,
                 ),
             )
-        self.samples.sort(key=lambda x: x.ext_id)
+        self.samples.sort(key=lambda x: x.name)
 
     def read_metadata(self) -> dict[str, pd.DataFrame]:
         """
@@ -151,7 +158,7 @@ class HTMLBuilder:
                     'Data': key.capitalize(),
                     'Value': self.metadata.__getattribute__(key),
                 }
-                for key in ['run_datetime', 'version']
+                for key in ['run_date']
             ),
         }
 
@@ -181,7 +188,7 @@ class HTMLBuilder:
         config_json = json.dumps(config_retrieve([]), indent=2, sort_keys=True)
 
         template_context = {
-            'run_datetime': self.metadata.run_datetime,
+            'run_date': self.metadata.run_date,
             'samples': self.samples,
             'report_title': f'Talos AF Report',
             'meta_tables': meta_tables,
@@ -212,30 +219,11 @@ class Sample:
     def __init__(
         self,
         name: str,
-        metadata,
-        variants: list[VariantAf],
-        html_builder: HTMLBuilder,
+        variants: list['Variant'],
     ):
-        self.metadata = metadata
         self.name = name
-        self.family_id = metadata.family_id
-        self.ext_id = html_builder.ext_id_map.get(name, name)
-
-        # create a url link out to the sample-level data
-        if html_builder.link_engine:
-            self.sample_link = html_builder.link_engine.generate_sample_link(self) if html_builder.link_engine else None
-        else:
-            self.sample_link = None
-
-        # Ingest variants excluding any on the forbidden gene list
-        self.variants = [
-            Variant(
-                report_variant,
-                self,
-                html_builder,
-            )
-            for report_variant in variants
-        ]
+        self.ext_id = 'EXTERNAL'
+        self.variants = variants
 
     def __str__(self):
         return self.name
@@ -337,68 +325,35 @@ class Variant:
 
         return f'{self.ref}->{self.alt}'
 
-    def __init__(self, report_variant: VariantAf, sample: Sample, html_builder: HTMLBuilder):  # noqa: PLR0915
-        self.var_data = report_variant.var_data
-        self.chrom = report_variant.var_data.coordinates.chrom
-        self.pos = report_variant.var_data.coordinates.pos
-        self.ref = report_variant.var_data.coordinates.ref
-        self.alt = report_variant.var_data.coordinates.alt
-        self.change = self.get_var_change()
-        self.first_tagged: str = report_variant.first_seen
-        self.support_vars = report_variant.support_vars
-        self.warning_flags = report_variant.flags
+    def __init__(self, report_variants: dict[str, VariantAf], instance: ReportableVariant):  # noqa: PLR0915
+        # pick out the annotations for this one variant
+        self.var_id = instance.var_id
+        variant_annotations = report_variants[self.var_id]
 
-        # List of (gene_id, symbol)
-        self.gene: str = report_variant.gene
+        self.gene: str = variant_annotations.gene
+
+        self.info = variant_annotations.info
+        self.coordinates = variant_annotations.coordinates
+        self.chrom = variant_annotations.coordinates.chrom
+        self.pos = variant_annotations.coordinates.pos
+        self.ref = variant_annotations.coordinates.ref
+        self.alt = variant_annotations.coordinates.alt
+        self.change = self.get_var_change()
+
+        self.first_tagged: str = instance.first_seen
+        self.support_vars = list(instance.support_vars)
+        self.transcript_consequences = variant_annotations.transcript_consequences
 
         # Summaries CSQ strings
         (self.csq, self.hgvsps) = self.parse_csq()
 
         # pull up the highest AlphaMissense score, if present
-        am_scores = [
-            float(csq['am_pathogenicity'])
-            for csq in self.var_data.transcript_consequences
-            if csq.get('am_pathogenicity')
-        ]
+        am_scores = [float(csq['am_score']) for csq in self.transcript_consequences if csq.get('am_score')]
 
-        self.var_data.info['alpha_missense_max'] = max(am_scores) if am_scores else 'missing'
-
-        # get the variant-level hyperlink
-        if html_builder.link_engine:
-            var_string = str(self.var_data.info.get('var_link'))
-            self.var_link = html_builder.link_engine.generate_variant_link(sample, var_string)
-        else:
-            self.var_link = None
-
-        # Pre-serialize variant data for Jinja2 to avoid complex template logic
-        self.var_data_json = self.var_data.model_dump(mode='json') if self.var_data else {}
-
-        # Pre-serialize other potentially complex objects
-        self.support_vars_json = []
-        if hasattr(self, 'support_vars') and self.support_vars:
-            for var_string in self.support_vars:
-                url = None
-                if html_builder.link_engine:
-                    url = html_builder.link_engine.generate_variant_link(sample, var_string)
-
-                self.support_vars_json.append(
-                    {
-                        'var_string': var_string,
-                        'url': url,
-                    },
-                )
-
-        # Pre-serialize transcript consequences
-        if hasattr(self.var_data, 'transcript_consequences') and self.var_data.transcript_consequences:
-            self.transcript_consequences_json = [
-                csq.model_dump(mode='json') if hasattr(csq, 'model_dump') else csq
-                for csq in self.var_data.transcript_consequences
-            ]
-        else:
-            self.transcript_consequences_json = []
+        self.info['alpha_missense_max'] = max(am_scores) if am_scores else 'missing'
 
     def __str__(self) -> str:
-        return f'{self.chrom}-{self.pos}-{self.ref}-{self.alt}'
+        return self.var_id
 
     def parse_csq(self):
         """
@@ -412,14 +367,17 @@ class Variant:
         consequences = set()
         p_changes = set()
 
-        for csq in self.var_data.transcript_consequences:
+        for csq in self.transcript_consequences:
             # todo decide what to do here - currently skipping NMD transcript consequences
             if 'NMD_transcript' in csq['consequence']:
                 continue
 
             consequences.update(csq['consequence'].split('&'))
+
+            # todo we don't get ENSP annotations here
             if aa := csq.get('amino_acid_change'):
-                p_changes.add(f'{csq["ensp"]}: {aa}')
+                p_changes.add(aa)
+
             # TODO (MattWellie) add HGVS c. notation
             # TODO (MattWellie) add HGVS p. notation
             # elif csq['hgvsc']:
@@ -485,7 +443,7 @@ def main(
         link_builder = None
 
     html = HTMLBuilder(
-        results_dict=results_object,
+        results_object=results_object,
         link_engine=link_builder,
         ext_id_map=external_id_map,
     )

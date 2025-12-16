@@ -41,7 +41,7 @@
     <nav class="navbar navbar-dark bg-dark justify-content-start">
       <a class="navbar-brand p-1" href="#"> {{ report_title|default("Talos Report") }}</a>
       <span class="navbar-text">
-        Generated: {{ run_datetime }}
+        Generated: {{ run_date }}
       </span>
     </nav>
 
@@ -239,8 +239,13 @@
         }
 
         function formatChildRow(rowData) {
-            var variantData = rowData.variantData || {};
+            var variantInfo = rowData.variantInfo || {};
+            var varChrom = rowData.chrom;
+            var varPos = rowData.pos;
+            var varRef = rowData.ref;
+            var varAlt = rowData.alt;
             var supportVars = rowData.supportVars || [];
+
         var transcriptConsequences = rowData.transcriptConsequences || [];
 
         var html = '<div class="child-row-content"><div class="row">';
@@ -253,93 +258,55 @@
         html += '</dd>';
 
         if (supportVars && supportVars.length > 0) {
-            var validSupport = supportVars.filter(function(entry) {
-                return entry && entry.var_string;
-            });
-            if (validSupport.length > 0) {
-                html += '<dt class="col-sm-4">Supporting variants</dt><dd class="col-sm-8">';
-                validSupport.forEach(function(entry, index) {
-                    if (entry.url) {
-                        html += '<a href="' + escapeHtml(entry.url) + '" target="_blank">' + escapeHtml(entry.var_string) + '</a>';
-                    } else {
-                        html += escapeHtml(entry.var_string);
-                    }
-                    if (index < validSupport.length - 1) {
-                        html += '<br>';
-                    }
-                });
-                html += '</dd>';
-            }
+            html += '<dt class="col-sm-4">Supporting variants</dt><dd class="col-sm-8">';
+            supportVars.join(", ")
+            html += '</dd>';
         }
 
             html += '<dt class="col-sm-4">Allele Counts</dt><dd class="col-sm-8">';
-            if (variantData.info) {
-                var callsetAc = (variantData.info.ac !== undefined && variantData.info.ac !== null) ? variantData.info.ac : 'N/A';
-                var callsetAn = (variantData.info.an !== undefined && variantData.info.an !== null) ? variantData.info.an : 'N/A';
-                html += 'This callset AC: ' + escapeHtml(String(callsetAc)) + ' / AN: ' + escapeHtml(String(callsetAn)) + '<br>';
+            var callsetAc = (variantInfo.ac !== undefined && variantInfo.ac !== null) ? variantInfo.ac : 'N/A';
+            var callsetAn = (variantInfo.an !== undefined && variantInfo.an !== null) ? variantInfo.an : 'N/A';
+            html += 'This callset AC: ' + escapeHtml(String(callsetAc)) + ' / AN: ' + escapeHtml(String(callsetAn)) + '<br>';
 
-                if (variantData.info.gnomad_ac_joint !== undefined && variantData.info.gnomad_ac_joint !== null) {
-                    var gnomadId = null;
-                    if (variantData.coordinates && variantData.coordinates.chrom && variantData.coordinates.ref && variantData.coordinates.alt) {
-                        gnomadId = [
-                            variantData.coordinates.chrom,
-                            variantData.coordinates.pos,
-                            variantData.coordinates.ref,
-                            variantData.coordinates.alt
-                        ].join('-');
-                    }
-                    if (!gnomadId) {
-                        gnomadId = rowData.variantCoords.replace(':', '-');
-                    }
-                    var gnomadAfVal = variantData.info.gnomad_af_joint;
-                    var gnomadAf = 'N/A';
-                    if (gnomadAfVal !== undefined && gnomadAfVal !== null && !isNaN(parseFloat(gnomadAfVal))) {
-                        gnomadAf = parseFloat(gnomadAfVal).toFixed(5);
-                    }
-                    html += 'gnomAD 4.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(gnomadId) + '?dataset=gnomad_r4" target="_blank"> AC:' + escapeHtml(String(variantData.info.gnomad_ac_joint)) + ' AF: ' + escapeHtml(String(gnomadAf)) + '</a>';
+            if (variantInfo.gnomad_ac_joint !== undefined && variantInfo.gnomad_ac_joint !== null) {
+                var gnomadId = [
+                    VarChrom,
+                    VarPos,
+                    VarRef,
+                    VarAlt,
+                ].join('-');
+
+                var gnomadAfVal = variantInfo.gnomad_af_joint;
+                var gnomadAf = 'N/A';
+                if (gnomadAfVal !== undefined && gnomadAfVal !== null && !isNaN(parseFloat(gnomadAfVal))) {
+                    gnomadAf = parseFloat(gnomadAfVal).toFixed(5);
                 }
+                html += 'gnomAD 4.1: <a href="https://gnomad.broadinstitute.org/variant/' + encodeURIComponent(gnomadId) + '?dataset=gnomad_r4" target="_blank"> AC:' + escapeHtml(String(variantInfo.gnomad_ac_joint)) + ' AF: ' + escapeHtml(String(gnomadAf)) + '</a>';
             }
             html += '</dd>';
 
             html += '<dt class="col-sm-4">In Silico Predictions</dt><dd class="col-sm-8">';
-            if (variantData.info.alpha_missense_max && variantData.info.alpha_missense_max !== 'missing') {
-                html += 'AlphaMissense: ' + parseFloat(variantData.info.alpha_missense_max).toFixed(2) + '<br>';
-            }
-            if (variantData.info.splice_ai_delta) {
-                var variantRef = {
-                    chrom: rowData.variantCoords.split(':')[0],
-                    pos: rowData.variantCoords.split(':')[1],
-                    ref: variantData.coordinates ? variantData.coordinates.ref : '',
-                    alt: variantData.coordinates ? variantData.coordinates.alt : ''
-                };
-                html += 'SpliceAI: <a href="' + spliceAiUrl(variantRef) + '" target="_blank">' + parseFloat(variantData.info.splice_ai_delta).toFixed(2) + '</a>';
-                if (variantData.info.splice_ai_csq && !['missing', 'No_consequence'].includes(variantData.info.splice_ai_csq)) {
-                    html += ' (' + escapeHtml(variantData.info.splice_ai_csq) + ')';
-                }
+            if (variantInfo.alpha_missense_max && variantInfo.alpha_missense_max !== 'missing') {
+                html += 'AlphaMissense: ' + parseFloat(variantInfo.alpha_missense_max).toFixed(2) + '<br>';
             }
             html += '</dd>';
 
             html += '<dt class="col-sm-4">External Links</dt><dd class="col-sm-8">';
+
             var variantForLinks = {
-                chrom: rowData.variantCoords.split(':')[0],
-                pos: rowData.variantCoords.split(':')[1],
-                ref: variantData.coordinates ? variantData.coordinates.ref : '',
-                alt: variantData.coordinates ? variantData.coordinates.alt : ''
+                chrom: rowData.chrom,
+                pos: rowData.pos,
+                ref: rowData.ref,
+                alt: rowData.alt
             };
             var gene = rowData.gene;
 
             html += '<a href="' + spliceAiUrl(variantForLinks) + '" target="_blank">SpliceAI</a> | ';
             html += '<a href="' + ucscUrl(variantForLinks) + '" target="_blank">UCSC</a> | ';
-            if (firstGene[0]) {
-                html += '<a href="' + decipherUrl(firstGene[0], true) + '" target="_blank">Decipher</a> ';
-                html += '<a href="' + decipherUrl(firstGene[0], false) + '" target="_blank">(Clinical)</a> | ';
-            }
-            if (firstGene[1]) {
-                html += '<a href="' + omimGeneUrl(firstGene[1]) + '" target="_blank">OMIM</a>';
-            }
-            html += '</dd>';
-
-            html += '</dl></div></div></div></div>';
+            html += '<a href="' + decipherUrl(gene, true) + '" target="_blank">Decipher</a> ';
+            html += '<a href="' + decipherUrl(gene, false) + '" target="_blank">(Clinical)</a> | ';
+            html += '<a href="' + omimGeneUrl(gene) + '" target="_blank">OMIM</a>';
+            html += '</dd></dl></div></div></div></div>';
 
         html += '</div></div>';
 
@@ -354,7 +321,7 @@
 
                 transcriptConsequences.forEach(function(csq) {
                     if (csq) {
-                        var transcriptId = csq.transcript || csq.feature || '';
+                        var transcriptId = csq.transcript || '';
                         html += '<tr>';
                         html += '<td>' + escapeHtml(csq.gene || '') + '</td>';
                         html += '<td><small>' + escapeHtml(transcriptId) + '</small></td>';
@@ -440,12 +407,14 @@
             } else {
                 var rowData = {
                     sampleName: tr.attr('data-sample-name') || '',
-                    sampleExtId: tr.attr('data-sample-ext-id') || '',
-                    familyId: tr.attr('data-family-id') || '',
                     variantCoords: tr.attr('data-variant-coords') || '',
                     variantChange: tr.attr('data-variant-change') || '',
                     gene: tr.attr('data-gene') || '',
-                    variantData: parseDataAttribute(tr, 'data-variant-data', {}),
+                    variantInfo: parseDataAttribute(tr, 'data-variant-info', {}),
+                    chrom: parseDataAttribute(tr, 'data-variant-chrom', {}),
+                    pos: parseDataAttribute(tr, 'data-variant-pos', {}),
+                    ref: parseDataAttribute(tr, 'data-variant-ref', {}),
+                    alt: parseDataAttribute(tr, 'data-variant-alt', {}),
                     supportVars: parseDataAttribute(tr, 'data-support-vars', []),
                     transcriptConsequences: parseDataAttribute(tr, 'data-transcript-consequences', [])
                 };
