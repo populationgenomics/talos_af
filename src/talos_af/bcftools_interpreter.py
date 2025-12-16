@@ -1,3 +1,13 @@
+"""
+This is a collection of methods to attempt the parsing of BCFTools CSQ
+format protein consequence strings into HGVS p. notation
+
+BCFTools outputs c.nnnnnn DNA positions, and long form single-letter AA protein changes
+The DNA entries are not as simple to translate from chromosomal to transcript locations
+
+The HGVS python package was supposed to be able to do all this, but it's rubbish
+"""
+
 import re
 
 IUPAC_LOOKUP = {
@@ -42,13 +52,11 @@ def process_missense(alteration: str) -> str:
 
 def process_frameshift(alteration: str) -> str:
     """Tougher one, arbitrary length, may be condensed..."""
-    fs2 = False
     fs_groups = FRAMESHIFT_RE_1.search(alteration)
     if not fs_groups:
         fs_groups = FRAMESHIFT_RE_2.search(alteration)
         if not fs_groups:
             raise RuntimeError(f'No frameshift found in {alteration}')
-        fs2 = True
 
     codon = int(fs_groups['codon1'])
     ref = fs_groups['ref']
