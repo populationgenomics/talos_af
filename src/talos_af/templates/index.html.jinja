@@ -282,7 +282,10 @@
 
             html += '<dt class="col-sm-4">In Silico Predictions</dt><dd class="col-sm-8">';
             if (variantInfo.alpha_missense_max && variantInfo.alpha_missense_max !== 'missing') {
-                html += 'AlphaMissense: ' + parseFloat(variantInfo.alpha_missense_max).toFixed(2) + '<br>';
+                html += 'Max AlphaMissense: ' + parseFloat(variantInfo.alpha_missense_max).toFixed(2) + '<br>';
+            }
+            if (variantInfo.revel_max && variantInfo.revel_max !== 'missing') {
+                html += 'Max REVEL: ' + parseFloat(variantInfo.revel_max).toFixed(2) + '<br>';
             }
             html += '</dd>';
 
@@ -311,7 +314,7 @@
                 html += '<div class="table-responsive"><table class="table table-sm table-striped">';
                 html += '<thead class="table-dark"><tr>';
                 html += '<th>Gene</th><th>Transcript</th><th>Protein change</th><th>Consequence</th>';
-                html += '<th>Biotype</th><th>AlphaMissense</th>';
+                html += '<th>Biotype</th><th>AlphaMissense</th><th>REVEL</th>';
                 html += '</tr></thead><tbody>';
 
                 transcriptConsequences.forEach(function(csq) {
@@ -329,6 +332,8 @@
                         if (csq.am_pathogenicity && typeof csq.am_pathogenicity === 'number') {
                             html += ' (' + csq.am_pathogenicity.toFixed(2) + ')';
                         }
+                        html += '</td>';
+                        html += '<td>' + escapeHtml(csq.revel || '');
                         html += '</td></tr>';
                     }
                 });

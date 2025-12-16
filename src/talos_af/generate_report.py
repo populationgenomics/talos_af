@@ -366,8 +366,10 @@ class Variant:
 
         # pull up the highest AlphaMissense score, if present
         am_scores = [float(csq['am_score']) for csq in self.transcript_consequences if csq.get('am_score')]
+        revel_scores = [float(csq['revel']) for csq in self.transcript_consequences if csq.get('revel')]
 
         self.info['alpha_missense_max'] = max(am_scores) if am_scores else 'missing'
+        self.info['revel_max'] = max(revel_scores) if revel_scores else 'missing'
 
     def __str__(self) -> str:
         return self.var_id
