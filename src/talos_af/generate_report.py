@@ -20,6 +20,7 @@ import pandas as pd
 from cloudpathlib.anypath import to_anypath
 from loguru import logger
 
+from talos_af.bcftools_interpreter import TYPES_RE, classify_change
 from talos_af.config import config_retrieve
 from talos_af.models import ReportableVariant, ResultsAf
 
@@ -165,6 +166,7 @@ class HTMLBuilder:
                     'Symbol': section.gene,
                     'MOI': section.moi,
                     'Gene ID': section.gene_id,
+                    'Transcript': section.transcript,
                     'Reportable': section.reportable,
                     'Specific Type': section.specific_type,
                 }
@@ -341,7 +343,7 @@ class Variant:
 
         self.gene: str = variant_annotations.gene
 
-        self.acmg: dict[str, str] = report_object.metadata.specification[variant_annotations.gene]
+        self.acmg = report_object.metadata.specification[variant_annotations.gene]
 
         self.high_impact = variant_annotations.high_impact
         self.clinvar_path = variant_annotations.clinvar_path
@@ -359,7 +361,7 @@ class Variant:
         self.transcript_consequences = variant_annotations.transcript_consequences
 
         # Summarise CSQ strings
-        (self.csq, self.hgvsps) = self.parse_csq()
+        (self.csq, self.hgvsps) = self.parse_csq(transcript=self.acmg.nm_id)
 
         # pull up the highest AlphaMissense score, if present
         am_scores = [float(csq['am_score']) for csq in self.transcript_consequences if csq.get('am_score')]
@@ -369,7 +371,7 @@ class Variant:
     def __str__(self) -> str:
         return self.var_id
 
-    def parse_csq(self):
+    def parse_csq(self, transcript: str | None = None) -> tuple[str, str]:
         """
         Parse CSQ variant string returning:
             - set of "consequences" from MANE transcripts
@@ -380,11 +382,16 @@ class Variant:
         """
         consequences = set()
         nmd_consequences = set()
-        p_changes = set()
+        p_change: str | None = None
 
         for csq in self.transcript_consequences:
+            type_match = TYPES_RE.match(csq['consequence'])
             csq_replaced = csq['consequence'].replace('_variant', '').replace('_', ' ')
             variant_csqs = csq_replaced.split('&')
+
+            # for the types I know how to parse, update them
+            if type_match:
+                csq['amino_acid_change'] = classify_change(csq['amino_acid_change'], consequence=type_match[0])
 
             # todo decide what to do here - currently skipping NMD transcript consequences
             if 'NMD transcript' in variant_csqs:
@@ -394,9 +401,8 @@ class Variant:
 
             consequences.update(variant_csqs)
 
-            # todo we don't get ENSP annotations here
-            if aa := csq.get('amino_acid_change'):
-                p_changes.add(aa)
+            if csq['transcript'] == transcript:
+                p_change = csq['amino_acid_change']
 
         # simplify the consequence strings
         if consequences:
