@@ -44,7 +44,14 @@
     </td>
     <td>
         {# Gene symbol #}
-        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a> {{ variant.acmg.moi|e }} {% if variant.acmg.reportable != "all" %} ({{ variant.acmg.specific_type }} only) {% endif %}
+        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a>  ({{ variant.acmg.moi|e }}{% if variant.acmg.reportable != "all" %} - {{ variant.acmg.specific_type }} only{% endif %})
+
+        <small>
+        {% if variant.hgvsps %}
+            <br>
+            {{variant.hgvsps|e}}
+        {% endif %}
+        </small>
     </td>
     <td>
         {# CompHet #}

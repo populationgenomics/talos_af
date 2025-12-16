@@ -166,7 +166,8 @@ class HTMLBuilder:
                     'Symbol': section.gene,
                     'MOI': section.moi,
                     'Gene ID': section.gene_id,
-                    'Transcript': section.transcript,
+                    'NM ID': section.nm_id,
+                    'ENST': section.enst,
                     'Reportable': section.reportable,
                     'Specific Type': section.specific_type,
                 }
@@ -361,7 +362,7 @@ class Variant:
         self.transcript_consequences = variant_annotations.transcript_consequences
 
         # Summarise CSQ strings
-        (self.csq, self.hgvsps) = self.parse_csq(transcript=self.acmg.nm_id)
+        (self.csq, self.hgvsps) = self.parse_csq(transcript=self.acmg.enst)
 
         # pull up the highest AlphaMissense score, if present
         am_scores = [float(csq['am_score']) for csq in self.transcript_consequences if csq.get('am_score')]
@@ -402,7 +403,7 @@ class Variant:
             consequences.update(variant_csqs)
 
             if csq['transcript'] == transcript:
-                p_change = csq['amino_acid_change']
+                p_change = f'{transcript} - {csq["amino_acid_change"]}'
 
         # simplify the consequence strings
         if consequences:
@@ -412,9 +413,7 @@ class Variant:
         else:
             csq_string = 'None?'
 
-        p_changes = ', '.join(p_changes)
-
-        return csq_string, p_changes
+        return csq_string, p_change
 
 
 def cli_main():

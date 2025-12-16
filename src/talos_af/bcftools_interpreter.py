@@ -28,7 +28,7 @@ FRAMESHIFT_RE_2 = re.compile(r'^(?P<codon1>\d+)(?P<ref>[\w.*]+)>(?P<codon2>\d+)(
 MISSENSE_RE = re.compile(r'^(?P<codon1>\d+)(?P<ref>\w)>(?P<codon2>\d+)(?P<alt>\w)$')
 STOP_GAIN_RE = re.compile(r'^(?P<codon1>\d+)(?P<ref>\w)>(?P<codon2>\d+)\*$')
 INT_END_RE = re.compile(r'..(?P<term>\d+)$')
-TYPES_RE = re.compile(f'frameshift|missense|stop_gained')
+TYPES_RE = re.compile('frameshift|missense|stop_gained')
 
 
 def process_missense(alteration: str) -> str:
@@ -69,7 +69,7 @@ def process_frameshift(alteration: str) -> str:
         return f'p.{first_ref}{codon}{first_alt}fs*{fs_length}'
 
     # e.g. 834PYVMVRERESFLAPSSGVQP..941>834PVRHGEGKRELPCPQLRCAA..859
-    elif match := re.search(INT_END_RE, alt):
+    if match := re.search(INT_END_RE, alt):
         end = int(match.group('term'))
         difference = end - codon
         return f'p.{first_ref}{codon}{first_alt}fs*{difference}'
