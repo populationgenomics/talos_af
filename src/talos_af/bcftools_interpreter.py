@@ -106,8 +106,3 @@ def classify_change(alteration: str, consequence: str | None = None) -> str:
                 return process_stop_gained(alteration)
 
     return alteration
-
-
-def format_dna_change(alteration: str) -> str:
-    """Reformat the"""
-    ...
