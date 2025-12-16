@@ -332,6 +332,9 @@ class Variant:
 
         self.gene: str = variant_annotations.gene
 
+        self.high_impact = variant_annotations.high_impact
+        self.clinvar_path = variant_annotations.clinvar_path
+
         self.info = variant_annotations.info
         self.coordinates = variant_annotations.coordinates
         self.chrom = variant_annotations.coordinates.chrom
@@ -365,14 +368,21 @@ class Variant:
         c.4978-2_4978-1insAGGTAAGCTTAGAAATGAGAAAAGACATGCACTTTTCATGTTAATGAAGTGATCTGGCTTCTCTTTCTA
         """
         consequences = set()
+        nmd_consequences = set()
         p_changes = set()
 
         for csq in self.transcript_consequences:
+            csq_replaced = csq['consequence'].replace('_variant', '').replace('_', ' ')
+            variant_csqs = csq_replaced.split('&')
+
             # todo decide what to do here - currently skipping NMD transcript consequences
-            if 'NMD_transcript' in csq['consequence']:
+            if 'NMD transcript' in variant_csqs:
+                variant_csqs.remove('NMD transcript')
+                nmd_consequences.update(variant_csqs)
                 continue
 
-            consequences.update(csq['consequence'].split('&'))
+            else:
+                consequences.update(variant_csqs)
 
             # todo we don't get ENSP annotations here
             if aa := csq.get('amino_acid_change'):
@@ -390,10 +400,14 @@ class Variant:
             #     p_changes.add(hgvsc)
 
         # simplify the consequence strings
-        consequences = ', '.join(_csq.replace('_variant', '').replace('_', ' ') for _csq in consequences)
+        if consequences:
+            csq_string = ', '.join(consequences)
+        elif nmd_consequences:
+            csq_string = 'NMD only: ' + ', '.join(nmd_consequences)
+
         p_changes = ', '.join(p_changes)
 
-        return consequences, p_changes
+        return csq_string, p_changes
 
 
 def cli_main():

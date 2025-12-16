@@ -64,15 +64,12 @@
         {# CSQ #}
         {% if variant.csq %}
             {{variant.csq|e}}
-            <br>
-            {% set p_parts = (variant.hgvsps or '').split(' ', 1) %}
-            {{ p_parts[1]|default(p_parts[0], true)|e }}
         {% endif %}
     </td>
     <td>
         {# Clinvar #}
-        {% if variant.info.clinvar_allele %}
-            <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.clinvar_allele|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinvar_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }}</a>
+        {% if variant.clinvar_path %}
+            <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }}</a>
             {% if variant.info.gold_stars %}{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}{% endif %}
         {% endif %}
     </td>

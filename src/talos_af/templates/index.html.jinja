@@ -270,10 +270,10 @@
 
             if (variantInfo.gnomad_ac_joint !== undefined && variantInfo.gnomad_ac_joint !== null) {
                 var gnomadId = [
-                    VarChrom,
-                    VarPos,
-                    VarRef,
-                    VarAlt,
+                    rowData.chrom,
+                    rowData.pos,
+                    rowData.ref,
+                    rowData.alt,
                 ].join('-');
 
                 var gnomadAfVal = variantInfo.gnomad_af_joint;
