@@ -140,8 +140,6 @@ class HTMLBuilder:
             )
         self.samples.sort(key=lambda x: x.ext_id)
 
-    # get_summary_stats has been replaced by summary data in results.metadata
-
     def read_metadata(self) -> dict[str, pd.DataFrame]:
         """
         parses into a general table
@@ -166,16 +164,6 @@ class HTMLBuilder:
             output_filepath (str): where to write the results to
         """
 
-        # if no variants were found, this can fail with a NoVariantsFoundException error
-        # we ignore that here, and catch it in the outer scope
-        # summary_table = self.get_summary_stats()
-
-        # if these attributes are in the config we'll end up with a more descriptive report title
-        dataset = config_retrieve('dataset', None)
-        seq_type = config_retrieve('sequencing_type', None)
-
-        extra_detail = ', '.join(x for x in [dataset, seq_type] if x)
-
         meta_tables_raw = self.read_metadata()
         meta_tables = {
             name: {
@@ -190,48 +178,13 @@ class HTMLBuilder:
         if 'Meta' in meta_tables:
             meta_tables = {'Run Metadata': meta_tables.pop('Meta')} | meta_tables
 
-        summary_table = None
-
-        # Build summary table from metadata.variant_breakdown if present
-        if self.metadata.variant_breakdown:
-            # convert dict to dataframe with a Category column
-            rows = []
-            for category, stats in self.metadata.variant_breakdown.items():
-                row = {'Category': category} | stats
-                rows.append(row)
-
-            summary_df = pd.DataFrame(rows)
-            # round mean to 3 decimals if present and rename columns for display
-            if 'mean' in summary_df.columns:
-                summary_df['mean'] = summary_df['mean'].round(3)
-
-            summary_df = summary_df.rename(
-                columns={
-                    'total': 'Total',
-                    'mean': 'Mean/sample',
-                    'max': 'Max/sample',
-                    'min': 'Min',
-                    'median': 'Median',
-                    'mode': 'Mode',
-                    'stddev': 'Stddev',
-                },
-            )
-
-            summary_table = {
-                'columns': summary_df.columns.tolist(),
-                'rows': summary_df.to_dict(orient='records'),
-            }
-
-        config_options = config_retrieve([])
-        config_json = json.dumps(config_options, indent=2, sort_keys=True)
+        config_json = json.dumps(config_retrieve([]), indent=2, sort_keys=True)
 
         template_context = {
             'run_datetime': self.metadata.run_datetime,
             'samples': self.samples,
-            'report_title': f'Talos Report: {extra_detail}',
-            'type': 'whole_cohort',
+            'report_title': f'Talos AF Report',
             'meta_tables': meta_tables,
-            'summary_table': summary_table,
             'config_json': config_json,
         }
 
@@ -282,8 +235,6 @@ class Sample:
                 html_builder,
             )
             for report_variant in variants
-            # the report can contain results found previously but not now, unsure if we want these reported
-            if report_variant.found_in_current_run
         ]
 
     def __str__(self):
@@ -393,7 +344,7 @@ class Variant:
         self.ref = report_variant.var_data.coordinates.ref
         self.alt = report_variant.var_data.coordinates.alt
         self.change = self.get_var_change()
-        self.first_tagged: str = report_variant.first_tagged
+        self.first_tagged: str = report_variant.first_seen
         self.support_vars = report_variant.support_vars
         self.warning_flags = report_variant.flags
 
@@ -401,7 +352,7 @@ class Variant:
         self.gene: str = report_variant.gene
 
         # Summaries CSQ strings
-        (self.mane_csq, self.mane_hgvsps) = self.parse_csq()
+        (self.csq, self.hgvsps) = self.parse_csq()
 
         # pull up the highest AlphaMissense score, if present
         am_scores = [
@@ -458,33 +409,33 @@ class Variant:
         condense massive cdna annotations, e.g.
         c.4978-2_4978-1insAGGTAAGCTTAGAAATGAGAAAAGACATGCACTTTTCATGTTAATGAAGTGATCTGGCTTCTCTTTCTA
         """
-        mane_consequences = set()
-        mane_hgvsps = set()
+        consequences = set()
+        p_changes = set()
 
         for csq in self.var_data.transcript_consequences:
-            if 'consequence' not in csq:
+            # todo decide what to do here - currently skipping NMD transcript consequences
+            if 'NMD_transcript' in csq['consequence']:
                 continue
 
-            if csq['mane_id']:
-                mane_consequences.update(csq['consequence'].split('&'))
-                if aa := csq.get('amino_acid_change'):
-                    mane_hgvsps.add(f'{csq["ensp"]}: {aa}')
-                # TODO (MattWellie) add HGVS c. notation
-                # TODO (MattWellie) add HGVS p. notation
-                # elif csq['hgvsc']:
-                #     hgvsc = csq['hgvsc'].split(':')[1]
-                #
-                #     # if massive indel base stretches are included, replace with a numerical length
-                #     if match := CDNA_SQUASH.search(hgvsc):
-                #         hgvsc.replace(match.group('bases'), str(len(match.group('bases'))))
-                #
-                #     mane_hgvsps.add(hgvsc)
+            consequences.update(csq['consequence'].split('&'))
+            if aa := csq.get('amino_acid_change'):
+                p_changes.add(f'{csq["ensp"]}: {aa}')
+            # TODO (MattWellie) add HGVS c. notation
+            # TODO (MattWellie) add HGVS p. notation
+            # elif csq['hgvsc']:
+            #     hgvsc = csq['hgvsc'].split(':')[1]
+            #
+            #     # if massive indel base stretches are included, replace with a numerical length
+            #     if match := CDNA_SQUASH.search(hgvsc):
+            #         hgvsc.replace(match.group('bases'), str(len(match.group('bases'))))
+            #
+            #     p_changes.add(hgvsc)
 
         # simplify the consequence strings
-        mane_consequences = ', '.join(_csq.replace('_variant', '').replace('_', ' ') for _csq in mane_consequences)
-        mane_hgvsps = ', '.join(mane_hgvsps)
+        consequences = ', '.join(_csq.replace('_variant', '').replace('_', ' ') for _csq in consequences)
+        p_changes = ', '.join(p_changes)
 
-        return mane_consequences, mane_hgvsps
+        return consequences, p_changes
 
 
 def cli_main():
@@ -533,7 +484,6 @@ def main(
     else:
         link_builder = None
 
-    # we always make this main page - we need a reliable output path to generate analysis entries [CPG]
     html = HTMLBuilder(
         results_dict=results_object,
         link_engine=link_builder,

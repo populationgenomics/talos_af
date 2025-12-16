@@ -24,6 +24,7 @@ process ApplyMoiFiltering {
             --vcf ${vcf} \
             --acmg_spec ${spec} \
             --pedigree ${pedigree} \
+            --dataset ${params.cohort} \
             --output ${params.cohort}_results.json ${history_arg}
         """
 }

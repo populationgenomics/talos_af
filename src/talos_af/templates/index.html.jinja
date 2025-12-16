@@ -71,17 +71,6 @@
                         <a href="https://github.com/populationgenomics/ClinvArbitration" target="_blank">ClinvArbitration</a>.
                         The tool favours clear assignment of pathogenic or benign ratings rather than defaulting to ‘conflicting’.
                         </p>
-                        <h5>Flags</h5>
-                        <p class="mb-1">
-                            <span class="badge text-bg-warning">AB Ratio</span>  allele balance falls outside the expected ranges (≤0.15 overall, outside 0.25–0.75 for hets, or ≤0.85 for homs)
-                        </p>
-                        <p class="mb-1">
-                            <span class="badge text-bg-warning">Low Read Depth</span> read depth (AD) for the sample is below the minimum threshold (default: 10)
-                        </p>
-                        <p class="mb-1">
-                            <span class="badge text-bg-warning">Ambiguous MOI</span> applied to AD Talos candidates that are P/LP in ClinVar but the gene is associated with both dominant and recessive disorders inheritance in PanelApp.
-                        </p>
-
                     </div>
                 </div>
 
@@ -93,18 +82,16 @@
                             <th>Variant</th>
                             <th>Gene (MOI)</th>
                             <th>First Tagged</th>
-                            <th>MANE CSQ</th>
+                            <th>CSQ</th>
                             <th>ClinvArbitration</th>
-                            <th>Flags</th>
                         </tr>
                         <tr>
                             <th><input type="text" placeholder="Search Individual"></th>
                             <th><input type="text" placeholder="Search Variant"></th>
                             <th><input type="text" placeholder="Search Gene (MOI)"></th>
                             <th><input type="text" placeholder="Search First Tagged"></th>
-                            <th><input type="text" placeholder="Search MANE CSQ"></th>
+                            <th><input type="text" placeholder="Search CSQ"></th>
                             <th><input type="text" placeholder="Search ClinVar"></th>
-                            <th><input type="text" placeholder="Search Flags"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -117,24 +104,24 @@
                 </table>
             </div>
             <div class="tab-pane fade" id="metadata-pane" role="tabpanel" aria-labelledby="metadata-tab">
-                {% if summary_table or meta_tables %}
-                    {% if summary_table %}
+            {% if meta_tables %}
+                {% for table_name, table in meta_tables.items() %}
                     <div class="card mb-3">
-                        <div class="card-header">Run Summary</div>
+                        <div class="card-header">{{ table_name|e }}</div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-sm mb-0">
                                     <thead>
                                         <tr>
-                                            {% for column in summary_table.columns %}
+                                            {% for column in table.columns %}
                                             <th>{{ column|e }}</th>
                                             {% endfor %}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for row in summary_table.rows %}
+                                        {% for row in table.rows %}
                                         <tr>
-                                            {% for column in summary_table.columns %}
+                                            {% for column in table.columns %}
                                             <td>{{ row[column]|default('', true)|e }}</td>
                                             {% endfor %}
                                         </tr>
@@ -144,40 +131,10 @@
                             </div>
                         </div>
                     </div>
-                    {% endif %}
-
-                    {% if meta_tables %}
-                    {% for table_name, table in meta_tables.items() %}
-                        <div class="card mb-3">
-                            <div class="card-header">{{ table_name|e }}</div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0">
-                                        <thead>
-                                            <tr>
-                                                {% for column in table.columns %}
-                                                <th>{{ column|e }}</th>
-                                                {% endfor %}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for row in table.rows %}
-                                            <tr>
-                                                {% for column in table.columns %}
-                                                <td>{{ row[column]|default('', true)|e }}</td>
-                                                {% endfor %}
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                    {% endif %}
-                {% else %}
-                    <p class="text-muted">No metadata available.</p>
-                {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No metadata available.</p>
+            {% endif %}
             </div>
             <div class="tab-pane fade" id="config-pane" role="tabpanel" aria-labelledby="config-tab">
                 {% if config_json %}
@@ -403,9 +360,6 @@
                         html += '<td><small>' + escapeHtml(transcriptId) + '</small></td>';
                         var proteinChange = (csq.amino_acid_change || '');
                         html += '<td><small>' + escapeHtml(proteinChange.trim()) + '</small>';
-                        if (csq.mane_id) {
-                            html += ' <span class="badge text-bg-info"> MANE - ' + escapeHtml(String(csq.mane_id)) + '</span>';
-                        }
                         html += '</td>';
                         html += '<td><small>' + escapeHtml(csq.consequence || '') + '</small></td>';
                         html += '<td><small>' + escapeHtml(csq.biotype || '') + '</small></td>';

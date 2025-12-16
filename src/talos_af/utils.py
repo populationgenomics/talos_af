@@ -336,6 +336,7 @@ def gather_gene_dict_from_vcf(
 
     Args:
         vcf_path (str): the VCF to read
+        id_lookup (dict[str, str | int]): a dictionary mapping transcript IDs to the
 
     Returns:
         A lookup in the form

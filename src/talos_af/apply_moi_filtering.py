@@ -35,6 +35,7 @@ def set_up_filters(parsed_spec: dict, pedigree: PedigreeParser) -> dict[str, che
 def main(
     vcf_path: str,
     acmg_spec_path: str,
+    dataset_name: str,
     pedigree_path: str,
     output_path: str,
     prior: str | None = None,
@@ -74,7 +75,14 @@ def main(
                 for sample, instances in results.items():
                     sample_results[sample].extend(instances)
 
-    results_from_this_run = models.ResultsAf(variants=selected_variants, instances=sample_results)
+    results_from_this_run = models.ResultsAf(
+        variants=selected_variants,
+        instances=sample_results,
+        metadata=models.MetadataAf(
+            acmg_path=acmg_spec_path,
+            dataset=dataset_name,
+        ),
+    )
 
     # if there are prior results, use those to reset first-seen dates
     utils_af.update_dates_from_prior_data(results_from_this_run, prior_path=prior)
@@ -89,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('--vcf', help='Labelled and annotated VCF file', required=True)
     parser.add_argument('--acmg_spec', help="Specification of each gene's interpretation rules", required=True)
     parser.add_argument('--pedigree', help='Pedigree for the callset (required for sex)', required=True)
+    parser.add_argument('--dataset', help='Name of this Cohort', required=True)
     parser.add_argument('--output', help='Path to write the output results to', required=True)
     parser.add_argument('--prior_results', help='Optional, Path to a previous set of results')
     args = parser.parse_args()
@@ -96,6 +105,7 @@ if __name__ == '__main__':
         vcf_path=args.vcf,
         acmg_spec_path=args.acmg_spec,
         pedigree_path=args.pedigree,
+        dataset_name=args.dataset,
         output_path=args.output,
         prior=args.prior_results,
     )

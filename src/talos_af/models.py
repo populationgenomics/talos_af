@@ -71,6 +71,16 @@ class ReportableVariant(BaseModel):
     first_seen: str = get_date_string()
 
 
+class MetadataAf(BaseModel):
+    """
+    A holder for some defined metadata attributes
+    """
+
+    acmg_path: str
+    run_date: str = get_date_string()
+    dataset: str
+
+
 class ResultsAf(BaseModel):
     """
     A representation of a result set
@@ -78,3 +88,4 @@ class ResultsAf(BaseModel):
 
     variants: dict[str, VariantAf] = Field(default_factory=dict)
     instances: dict[str, list[ReportableVariant]] = Field(default_factory=dict)
+    metadata: MetadataAf = Field(default_factory=MetadataAf)
