@@ -1,0 +1,79 @@
+<tr
+    data-sample-name="{{sample.name|e}}"
+    data-variant-coords="{{variant.chrom|e}}:{{variant.pos}}"
+    data-variant-chrom="{{variant.chrom|e}}"
+    data-variant-pos="{{variant.pos|e}}"
+    data-variant-ref="{{variant.ref|e}}"
+    data-variant-alt="{{variant.alt|e}}"
+    data-variant-change="{{variant.change|e}}"
+    data-gene="{{variant.gene|e}}"
+    data-variant-info='{{variant.info|tojson}}'
+    data-transcript-consequences='{{variant.transcript_consequences|tojson}}'
+>
+    <td style="white-space: nowrap" class="details-control">
+        {# Individual ID - Click to expand details #}
+        <button type="button" class="btn btn-link btn-sm p-0 details-toggle" aria-label="Toggle details"><i class="bi-plus-square"></i></button>
+
+        {% if sample.sample_link %}
+            <a href="{{sample.sample_link|e}}" target="_blank">
+                {{sample.name|e}}
+            </a>
+        {% else %}
+            {{sample.name|e}}
+        {% endif %}
+    </td>
+    <td>
+        {# Coordinates #}
+        {% if variant.var_link %}
+            <a href="{{variant.var_link|e}}" target="_blank">
+                {{variant.chrom|e}}:{{variant.pos}}
+            </a>
+        {% else %}
+            {{variant.chrom|e}}:{{variant.pos}}
+        {% endif %}
+        {{ variant.change|replace("->", ">")|e }}
+
+        {% set gnomad_url = 'https://gnomad.broadinstitute.org/variant/' ~ (variant|urlencode) ~ '?dataset=gnomad_r4' %}
+        <br>
+        <small class="text-muted">
+            gnomAD v4 AC: <a href="{{ gnomad_url }}" target="_blank">{{ variant.info.gnomad_ac_joint }}</a>
+            {% if variant.info.gnomad_af_joint is not none %}
+            | AF: <a href="{{ gnomad_url }}" target="_blank">{{ variant.info.gnomad_af_joint | round(4) }}</a>
+            {% endif %}
+        </small>
+    </td>
+    <td>
+        {# Gene symbol #}
+        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a>  ({{ variant.acmg.moi|e }}{% if variant.acmg.reportable != "all" %} - {{ variant.acmg.specific_type }} only{% endif %})
+
+        <small>
+        {% if variant.hgvsps %}
+            <br>
+            {{variant.hgvsps|e}}
+        {% endif %}
+        </small>
+    </td>
+    <td>
+        {# CompHet #}
+        {% if variant.support_vars %}
+            {{ variant.support_vars }}
+        {% endif %}
+    </td>
+    <td>
+        {# First Tagged #}
+        {{ variant.first_tagged }}
+    </td>
+    <td>
+        {# CSQ #}
+        {% if variant.csq %}
+            {{variant.csq|e}}
+        {% endif %}
+    </td>
+    <td>
+        {# Clinvar #}
+        {% if variant.clinvar_path %}
+            <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }}</a>
+            {% if variant.info.gold_stars %}{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}{% endif %}
+        {% endif %}
+    </td>
+</tr>

@@ -74,7 +74,14 @@ def main(
                 for sample, instances in results.items():
                     sample_results[sample].extend(instances)
 
-    results_from_this_run = models.ResultsAf(variants=selected_variants, instances=sample_results)
+    results_from_this_run = models.ResultsAf(
+        variants=selected_variants,
+        instances=sample_results,
+        metadata=models.MetadataAf(
+            acmg_path=acmg_spec_path,
+            specification=acmg_spec,
+        ),
+    )
 
     # if there are prior results, use those to reset first-seen dates
     utils_af.update_dates_from_prior_data(results_from_this_run, prior_path=prior)

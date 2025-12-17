@@ -8,7 +8,7 @@ description='Talos-like application for applying ACMG Actionable Findings detect
 readme = "README.md"
 # currently cpg-flow is pinned to this version
 requires-python = ">=3.10,<3.11"
-version="0.0.1"
+version="0.0.2"
 license={ "file" = "LICENSE" }
 classifiers=[
     'Environment :: Console',
@@ -100,7 +100,7 @@ cpg = ["metamist", "cpg_flow", "cpg_utils"]
 [tool.ruff.lint.per-file-ignores]
 
 [tool.bumpversion]
-current_version = "0.0.1"
+current_version = "0.0.2"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 commit = true

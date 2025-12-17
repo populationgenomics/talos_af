@@ -54,28 +54,6 @@ PHASE_BROKEN: bool = False
 
 TRUNCATING = {'nonsense', 'frameshift'}
 
-IUPAC_LOOKUP = {
-    'A': 'Ala',
-    'C': 'Cys',
-    'D': 'Asp',
-    'E': 'Glu',
-    'F': 'Phe',
-    'G': 'Gly',
-    'H': 'His',
-    'I': 'Ile',
-    'K': 'Lys',
-    'L': 'Leu',
-    'M': 'Met',
-    'N': 'Asn',
-    'P': 'Pro',
-    'Q': 'Gln',
-    'R': 'Arg',
-    'S': 'Ser',
-    'T': 'Thr',
-    'V': 'Val',
-    'W': 'Trp',
-    'Y': 'Tyr',
-}
 TYPE_RE = re.compile(r'p\.(?P<ref>\D)(?P<codon>\d+)(?P<alt>\D)')
 
 
@@ -240,8 +218,8 @@ def organise_csq(
         am_class = str(var_details.pop('am_class'))
         am_score = float(var_details.pop('am_score'))
         am_dict[transcript] = {
-            'class': am_class,
-            'score': am_score,
+            'am_class': am_class,
+            'am_score': am_score,
         }
     else:
         var_details.pop('am_transcript', None)
@@ -293,6 +271,9 @@ def create_small_variant(
 
     clinvar_path = info.get('clinical_significance') == PATHOGENIC
 
+    info['clinvar_allele'] = info['allele_id'] if clinvar_path else None
+    info['clinvar_stars'] = int(info['gold_stars']) if clinvar_path else None
+
     consequential = organise_csq(info, id_lookup)
 
     if not (clinvar_path or consequential):
@@ -333,6 +314,7 @@ def gather_gene_dict_from_vcf(
 
     Args:
         vcf_path (str): the VCF to read
+        id_lookup (dict[str, str | int]): a dictionary mapping transcript IDs to the
 
     Returns:
         A lookup in the form

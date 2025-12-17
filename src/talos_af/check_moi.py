@@ -100,10 +100,7 @@ class BaseMoi(abc.ABC):
     Definition of the MOI test base class
     """
 
-    def __init__(self, pedigree: PedigreeParser, applied_moi: str):
-        if applied_moi is None:
-            raise ValueError('An applied MOI needs to reach the Base Class')
-        self.applied_moi = applied_moi
+    def __init__(self, pedigree: PedigreeParser):
         self.pedigree = pedigree
         self.minimum_depth = config.config_retrieve('minimum_depth', 10)
         self.global_filter: GlobalFilter | DominantFilter = GlobalFilter()
@@ -170,12 +167,12 @@ class BaseMoi(abc.ABC):
 
 
 class AD(BaseMoi):
-    def __init__(self, pedigree: PedigreeParser, applied_moi: str = 'Autosomal Dominant'):
+    def __init__(self, pedigree: PedigreeParser):
         """
         Simplest: AD MOI
         """
 
-        super().__init__(pedigree=pedigree, applied_moi=applied_moi)
+        super().__init__(pedigree=pedigree)
         self.global_filter = DominantFilter()
         self.clinvar_filter = ClinVarDominantFilter()
 
@@ -199,10 +196,10 @@ class AD(BaseMoi):
 
 
 class AR(BaseMoi):
-    def __init__(self, pedigree: PedigreeParser, applied_moi: str = 'Autosomal Recessive'):
+    def __init__(self, pedigree: PedigreeParser):
         """Autosomal Recessive MOI - check for homs and compound-hets."""
 
-        super().__init__(pedigree=pedigree, applied_moi=applied_moi)
+        super().__init__(pedigree=pedigree)
 
     def run(
         self,
@@ -238,9 +235,9 @@ class AR(BaseMoi):
 
 
 class XL(BaseMoi):
-    def __init__(self, pedigree: PedigreeParser, applied_moi: str = 'X-Linked'):
+    def __init__(self, pedigree: PedigreeParser):
         """X-Linked - Heterozygous and homozygous variants in females, as well as hemizygous in males are reportable."""
-        super().__init__(pedigree=pedigree, applied_moi=applied_moi)
+        super().__init__(pedigree=pedigree)
 
     def run(
         self,

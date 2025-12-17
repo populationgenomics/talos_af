@@ -9,6 +9,7 @@ include { EncodeAlphaMissense } from './modules/EncodeAlphaMissense/main'
 include { EncodeClinvar } from './modules/EncodeClinvar/main'
 include { EncodeRevel } from './modules/EncodeRevel/main'
 include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
+include { GenerateHtmlReport } from './modules/GenerateHtmlReport/main'
 include { ParseAlphaMissense } from './modules/ParseAlphaMissense/main'
 include { ParseClinvar } from './modules/ParseClinvar/main'
 include { ParseGff3IntoBed } from './modules/ParseGff3IntoBed/main'
@@ -115,5 +116,10 @@ workflow {
         PrepareAcmgSpec.out,
         ch_config,
         ch_previous_results,
+    )
+
+    GenerateHtmlReport(
+        ApplyMoiFiltering.out,
+        ch_config,
     )
 }

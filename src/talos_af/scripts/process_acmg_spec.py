@@ -59,17 +59,17 @@ def main(input_spec: str, output_path: str, mane_file: str) -> None:
     with open(input_spec) as input_file:
         reader = DictReader(input_file, delimiter='\t')
         for row in reader:
-            gene = row['Gene']
+            gene = row['Gene'].rstrip()
 
             # hard lookup here, we don't expect or allow failures. These are super well known genes
             mane_content = mane_mapping[gene]
 
             row_dict = {
                 'gene': gene,
-                'moi': row['Inheritance'],
-                'gene_id': mane_content['ensg'],
-                'nm_id': mane_content['nm_id'],
-                'enst': mane_content['enst'],
+                'moi': row['Inheritance'].rstrip(),
+                'gene_id': mane_content['ensg'].rstrip(),
+                'nm_id': mane_content['nm_id'].rstrip(),
+                'enst': mane_content['enst'].rstrip(),
             }
 
             vars_to_report = row['Variants to report']
