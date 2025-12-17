@@ -404,7 +404,7 @@ class Variant:
 
             consequences.update(variant_csqs)
 
-            if csq['transcript'] == transcript:
+            if csq['transcript'] == transcript and csq.get('amino_acid_change'):
                 p_change = f'{transcript} - {csq["amino_acid_change"]}'
 
         # simplify the consequence strings
