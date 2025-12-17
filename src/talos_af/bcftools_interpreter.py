@@ -33,6 +33,7 @@ IUPAC_LOOKUP = {
     'V': 'Val',
     'W': 'Trp',
     'Y': 'Tyr',
+    '*': 'Ter',
 }
 
 FRAMESHIFT_RE_1 = re.compile(r'^(?P<codon1>\d+)(?P<ref>[A-Z.*]+)>(?P<codon2>\d+)(?P<alt>[A-Z.*]+)$')
