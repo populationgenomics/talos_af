@@ -45,13 +45,6 @@
     <td>
         {# Gene symbol #}
         <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a>  ({{ variant.acmg.moi|e }}{% if variant.acmg.reportable != "all" %} - {{ variant.acmg.specific_type }} only{% endif %})
-
-        <small>
-        {% if variant.hgvsps %}
-            <br>
-            {{variant.hgvsps|e}}
-        {% endif %}
-        </small>
     </td>
     <td>
         {# CompHet #}
@@ -67,13 +60,19 @@
         {# CSQ #}
         {% if variant.csq %}
             {{variant.csq|e}}
-        {% endif %}
-    </td>
-    <td>
-        {# Clinvar #}
-        {% if variant.clinvar_path %}
-            <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }}</a>
-            {% if variant.info.gold_stars %}{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}{% endif %}
+            <small>
+            {% if variant.hgvsps %}
+                <br>
+                {{variant.hgvsps|e}}
+            {% endif %}
+            </small>
+
+            {% if variant.high_impact %}
+                <br><b style='color:red;'>High Impact</b>
+            {% endif %}
+            {% if variant.clinvar_path %}
+                <br>ClinVar <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }} </a>{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}
+            {% endif %}
         {% endif %}
     </td>
 </tr>

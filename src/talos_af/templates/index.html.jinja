@@ -84,7 +84,6 @@
                             <th>CompHet</th>
                             <th>First Tagged</th>
                             <th>CSQ</th>
-                            <th>ClinvArbitration</th>
                         </tr>
                         <tr>
                             <th><input type="text" placeholder="Search Individual"></th>
@@ -93,7 +92,6 @@
                             <th><input type="text" placeholder="Search CompHet"></th>
                             <th><input type="text" placeholder="Search First Tagged"></th>
                             <th><input type="text" placeholder="Search CSQ"></th>
-                            <th><input type="text" placeholder="Search ClinVar"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -280,7 +278,7 @@
             }
             html += '</dd>';
 
-            html += '<dt class="col-sm-4">In Silico Predictions</dt><dd class="col-sm-8">';
+            html += '<dt class="col-sm-4">In Silico</dt><dd class="col-sm-8">';
             if (variantInfo.alpha_missense_max && variantInfo.alpha_missense_max !== 'missing') {
                 html += 'Max AlphaMissense: ' + parseFloat(variantInfo.alpha_missense_max).toFixed(2) + '<br>';
             }
