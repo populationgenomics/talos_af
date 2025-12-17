@@ -377,13 +377,14 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 -without-docker
             """,
         )
-        job.command(f'gcloud storage cp {job.output}/{dataset.name}_results.html {outputs["html"]!s}')
+        job.command(f'mv {job.output}/{dataset.name}_results.html {job.html}')
 
         # set some resource params
         job.storage('100Gi').memory('highmem').cpu(2)
 
         # copy the outputs back, in one smooooooth motion
         batch_instance.write_output(job.output, str(outputs['json']).removesuffix('_results.json'))
+        batch_instance.write_output(job.html, outputs['html'])
         return self.make_outputs(dataset, outputs, jobs=job)
 
 
