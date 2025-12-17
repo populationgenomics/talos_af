@@ -10,6 +10,8 @@ The HGVS python package was supposed to be able to do all this, but it's rubbish
 
 import re
 
+from loguru import logger
+
 IUPAC_LOOKUP = {
     'A': 'Ala',
     'C': 'Cys',
@@ -45,7 +47,8 @@ def process_missense(alteration: str) -> str:
     """We expect a missense, so look for a missense."""
     missense_groups = MISSENSE_RE.search(alteration)
     if not missense_groups:
-        raise RuntimeError(f'No missense found in {alteration}')
+        logger.warning(f'No missense found in {alteration}')
+        return alteration
 
     return f'p.{IUPAC_LOOKUP[missense_groups["ref"]]}{missense_groups["codon1"]}{IUPAC_LOOKUP[missense_groups["alt"]]}'
 
@@ -56,7 +59,8 @@ def process_frameshift(alteration: str) -> str:
     if not fs_groups:
         fs_groups = FRAMESHIFT_RE_2.search(alteration)
         if not fs_groups:
-            raise RuntimeError(f'No frameshift found in {alteration}')
+            logger.warning(f'No frameshift found in {alteration}')
+            return alteration
 
     codon = int(fs_groups['codon1'])
     ref = fs_groups['ref']
@@ -89,21 +93,14 @@ def process_stop_gained(alteration: str) -> str:
     """Example: 128W>128*"""
     sg_groups = STOP_GAIN_RE.search(alteration)
     if not sg_groups:
-        raise RuntimeError(f'No stop gained found in {alteration}')
+        logger.warning(f'No stop gained found in {alteration}')
+        return alteration
 
     return f'p.{IUPAC_LOOKUP[sg_groups["ref"]]}{sg_groups["codon1"]}Ter'
 
 
 def classify_change(alteration: str, consequence: str | None = None) -> str:
-    """
-
-    Args:
-        alteration:
-        consequence:
-
-    Returns:
-
-    """
+    """Detect some known variant types."""
     if consequence:
         match consequence:
             case 'missense':
