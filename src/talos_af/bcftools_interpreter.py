@@ -41,7 +41,7 @@ FRAMESHIFT_RE_2 = re.compile(r'^(?P<codon1>\d+)(?P<ref>[\w.*]+)>(?P<codon2>\d+)(
 MISSENSE_RE = re.compile(r'^(?P<codon1>\d+)(?P<ref>\w)>(?P<codon2>\d+)(?P<alt>\w)$')
 STOP_GAIN_RE = re.compile(r'^(?P<codon1>\d+)(?P<ref>\w)>(?P<codon2>\d+)\*$')
 INT_END_RE = re.compile(r'..(?P<term>\d+)$')
-TYPES_RE = re.compile('frameshift|missense|stop_gained')
+TYPES_RE = re.compile('frameshift|missense|stop_gained|synonymous')
 
 
 def process_missense(alteration: str) -> str:
@@ -110,5 +110,7 @@ def classify_change(alteration: str, consequence: str | None = None) -> str:
                 return process_frameshift(alteration)
             case 'stop_gained':
                 return process_stop_gained(alteration)
+            case 'synonymous':
+                return 'p.='
 
     return alteration
