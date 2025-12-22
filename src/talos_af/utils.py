@@ -192,7 +192,7 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
 
 def organise_csq(
     var_details: dict[str, Any],
-    id_lookup: dict[str, str],
+    symbol_indexed_lookup: dict[str, dict[str, str]],
 ) -> bool:
     """
     Read the transcript consequences, split into a list of details, integrate Revel and AlphaMissense where applicable.
@@ -233,11 +233,15 @@ def organise_csq(
 
         # not zipping as Strict, sometimes the consequence is truncated
         txcsq_dict = dict(zip(CSQ_STRING, elements, strict=False))
-        if txcsq_dict['gene'] not in id_lookup:
+        if txcsq_dict['gene'] not in symbol_indexed_lookup:
+            continue
+
+        # skip over non-Mane transcripts
+        if txcsq_dict['transcript'] != symbol_indexed_lookup[txcsq_dict['gene']]['enst']:
             continue
 
         gene_str = str(txcsq_dict['gene'])
-        txcsq_dict['ensg'] = id_lookup[gene_str]
+        txcsq_dict['ensg'] = symbol_indexed_lookup[gene_str]['gene_id']
 
         if any(each_csq in CRITICAL_CSQ_DEFAULT for each_csq in txcsq_dict['consequence'].split('&')):
             consequential = True
@@ -260,7 +264,7 @@ def organise_csq(
 def create_small_variant(
     var: 'cyvcf2.Variant',
     samples: list[str],
-    id_lookup: dict[str, str],
+    symbol_indexed_lookup: dict[str, dict[str, str]],
 ) -> models.VariantAf | None:
     """Takes a small variant and creates a Model from it."""
 
@@ -278,7 +282,7 @@ def create_small_variant(
             'clinvar_stars': int(info['gold_stars']),
         }
 
-    consequential = organise_csq(info, id_lookup)
+    consequential = organise_csq(info, symbol_indexed_lookup)
 
     if not (clinvar_path or consequential):
         return None
@@ -308,7 +312,7 @@ def create_small_variant(
 
 def gather_gene_dict_from_vcf(
     vcf_path: str,
-    id_lookup: dict[str, str],
+    acmg_spec: dict[str, dict[str, str]],
 ) -> dict[str, list[models.VariantAf]]:
     """
     takes a cyvcf2.VCFReader instance, and a specified chromosome
@@ -318,7 +322,7 @@ def gather_gene_dict_from_vcf(
 
     Args:
         vcf_path (str): the VCF to read
-        id_lookup (dict[str, str | int]): a dictionary mapping transcript IDs to the
+        acmg_spec (dict): the ACMG specification
 
     Returns:
         A lookup in the form
@@ -336,10 +340,14 @@ def gather_gene_dict_from_vcf(
 
     variant_source = cyvcf2.VCF(vcf_path)
 
+    symbol_indexed_acmg = {value['gene']: value for key, value in acmg_spec.items()}
+
     # iterate over all variants on this contig and store by unique key
     # if contig has no variants, prints an error and returns []
     for variant_row in variant_source:
-        variant = create_small_variant(var=variant_row, samples=variant_source.samples, id_lookup=id_lookup)
+        variant = create_small_variant(
+            var=variant_row, samples=variant_source.samples, symbol_indexed_lookup=symbol_indexed_acmg
+        )
         if variant is None:
             skipped_variant_count += 1
             continue

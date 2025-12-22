@@ -44,14 +44,12 @@ def main(
     with open(acmg_spec_path) as f:
         acmg_spec = json.load(f)
 
-    id_lookup = {value['gene']: key for key, value in acmg_spec.items()}
-
     pedigree = PedigreeParser(pedigree_path)
 
     moi_filter_dict = set_up_filters(acmg_spec, pedigree=pedigree)
 
     # gather all variants indexed by gene
-    gene_dict = utils_af.gather_gene_dict_from_vcf(vcf_path, id_lookup)
+    gene_dict = utils_af.gather_gene_dict_from_vcf(vcf_path, acmg_spec)
 
     selected_variants: dict[str, models.VariantAf] = {}
     sample_results: dict[str, list[models.ReportableVariant]] = defaultdict(list)
