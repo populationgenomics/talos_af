@@ -368,7 +368,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
-                --igv_dor {cram_dir} \\
+                --igv_dir {cram_dir} \\
                 --mane_input {mane} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\

@@ -190,6 +190,14 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
     return dict(phased_dict)
 
 
+def get_revel_as_dict(revel_details: str | None) -> dict[str, str]:
+    if revel_details is None:
+        return {}
+
+    score, transcripts = revel_details.split('~')
+    return dict.fromkeys(transcripts.split(','), score)
+
+
 def organise_csq(
     var_details: dict[str, Any],
     symbol_indexed_lookup: dict[str, dict[str, str]],
@@ -206,11 +214,7 @@ def organise_csq(
         return False
 
     # get and split revel data
-    revel_dict = {}
-    if (revel := var_details.pop('revel', '.')) != '.' and isinstance(revel, str):
-        score, transcripts = revel.split('~')
-        for transcript in transcripts.split(','):
-            revel_dict[transcript] = score
+    revel_dict = get_revel_as_dict(var_details.pop('revel', '.'))
 
     am_dict: dict[str, dict[str, str | float]] = {}
     if var_details.get('am_class', '.') != '.':
@@ -226,13 +230,11 @@ def organise_csq(
         var_details.pop('am_score', None)
 
     consequential = False
-    consequences = []
 
     for txcsq in bcsq.split(','):
-        elements = txcsq.split('|')
-
         # not zipping as Strict, sometimes the consequence is truncated
-        txcsq_dict = dict(zip(CSQ_STRING, elements, strict=False))
+        txcsq_dict = dict(zip(CSQ_STRING, txcsq.split('|'), strict=False))
+
         if txcsq_dict['gene'] not in symbol_indexed_lookup:
             continue
 
@@ -240,8 +242,7 @@ def organise_csq(
         if txcsq_dict['transcript'] != symbol_indexed_lookup[txcsq_dict['gene']]['enst']:
             continue
 
-        gene_str = str(txcsq_dict['gene'])
-        txcsq_dict['ensg'] = symbol_indexed_lookup[gene_str]['gene_id']
+        txcsq_dict['ensg'] = symbol_indexed_lookup[txcsq_dict['gene']]['gene_id']
 
         if any(each_csq in CRITICAL_CSQ_DEFAULT for each_csq in txcsq_dict['consequence'].split('&')):
             consequential = True
@@ -254,9 +255,7 @@ def organise_csq(
         if txcsq_dict['transcript'] in am_dict:
             txcsq_dict.update(**am_dict[txcsq_dict['transcript']])  # type: ignore[arg-type]
 
-        consequences.append(txcsq_dict)
-
-    var_details['transcript_consequences'] = consequences
+        var_details['transcript_consequences'] = txcsq_dict
 
     return consequential
 
