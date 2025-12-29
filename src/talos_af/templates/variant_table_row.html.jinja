@@ -31,7 +31,7 @@
         {% else %}
             {{variant.chrom|e}}:{{variant.pos}}
         {% endif %}
-        {{ variant.change|replace("->", ">")|e }}
+        {{ variant.change|replace("->", ">")|e }}, {{variant.gt}}
 
         {% set gnomad_url = 'https://gnomad.broadinstitute.org/variant/' ~ (variant|urlencode) ~ '?dataset=gnomad_r4' %}
         <br>

@@ -71,6 +71,20 @@
                         <a href="https://github.com/populationgenomics/ClinvArbitration" target="_blank">ClinvArbitration</a>.
                         The tool favours clear assignment of pathogenic or benign ratings rather than defaulting to ‘conflicting’.
                         </p>
+                        
+                        <h5>IGV Desktop</h5>
+                        <p class="mb-2">
+                        If a CRAM directory was passed using the <i>"igv_dir"</i> parameter, each variant will contain a
+                        hyperlink which can open the expected CRAM path in IGV Desktop. This expects the naming convention
+                        "{sample_id}.cram"
+                        </p>
+
+                        <h5>High Impact</h5>
+                        <p class="mb-2">
+                        If the selection criteria for a variant included a High Impact transcript consequence, thie will
+                        be shown in <b style='color:red;'>red</b> in the CSQ column. If high impact tx csq was not part
+                        of the selection criteria, the consequence(s) will be shown in black.
+                        </p>
                     </div>
                 </div>
 

@@ -67,6 +67,7 @@ class ReportableVariant(BaseModel):
     """
 
     var_id: str
+    genotype: str
     support_vars: set[str] = Field(default_factory=set)
     first_seen: str = get_date_string()
 

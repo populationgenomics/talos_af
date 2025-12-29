@@ -349,6 +349,8 @@ class Variant:
 
         self.gene: str = variant_annotations.gene
 
+        self.gt = instance.genotype
+
         self.acmg = report_object.metadata.specification[variant_annotations.gene]
 
         self.symbol = self.acmg.gene
