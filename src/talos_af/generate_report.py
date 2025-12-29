@@ -106,12 +106,14 @@ class HTMLBuilder:
         results_object: ResultsAf,
         link_engine: 'LinkEngine | None' = None,
         ext_id_map: dict[str, str] | None = None,
+        igv_dir: str | None = None,
     ):
         """
         Args:
             results_object (ResultsAf): the results object
             link_engine (LinkEngine, optional): the link engine to generate hyperlinks with
             ext_id_map (dict[str, str], optional): a mapping of sample IDs to external IDs, optional
+            igv_dir (str, optional): the igv_dir name to use to find CRAM, optional
         """
 
         if ext_id_map is None:
@@ -144,6 +146,7 @@ class HTMLBuilder:
                 Sample(
                     name=sample,
                     variants=sample_variants,
+                    igv_dir=igv_dir,
                 ),
             )
         self.samples.sort(key=lambda x: x.name)
@@ -231,10 +234,12 @@ class Sample:
         self,
         name: str,
         variants: list['Variant'],
+        igv_dir: str | None = None,
     ):
         self.name = name
         self.ext_id = 'EXTERNAL'
         self.variants = variants
+        self.igv_dir = igv_dir
 
     def __str__(self):
         return self.name
@@ -346,6 +351,8 @@ class Variant:
 
         self.acmg = report_object.metadata.specification[variant_annotations.gene]
 
+        self.symbol = self.acmg.gene
+
         self.high_impact = variant_annotations.high_impact
         self.clinvar_path = variant_annotations.clinvar_path
 
@@ -423,12 +430,14 @@ def cli_main():
     parser = ArgumentParser()
     parser.add_argument('--input', help='Path to analysis results', required=True)
     parser.add_argument('--output', help='Final HTML filename', required=True)
+    parser.add_argument('--igv_dir', help='Used to generate IGV desktop links', default=None)
     parser.add_argument('--ext_ids', help='Optional, Mapping file for external IDs', default=None)
     parser.add_argument('--seqr_ids', help='Optional, Mapping file for Seqr IDs', default=None)
     args = parser.parse_args()
     main(
         results=args.input,
         output=args.output,
+        igv_dir=args.igv_dir,
         ext_id_file=args.ext_ids,
         seqr_id_file=args.seqr_ids,
     )
@@ -437,6 +446,7 @@ def cli_main():
 def main(
     results: str,
     output: str,
+    igv_dir: str,
     ext_id_file: str | None = None,
     seqr_id_file: str | None = None,
 ):
@@ -445,6 +455,7 @@ def main(
     Args:
         results (str): path to the MOI-tested results file
         output (str): where to write the HTML file
+        igv_dir (str): CPG-internal, used to identify location of a sample CRAM file
         ext_id_file (str | None): optional, path to a file containing external IDs
         seqr_id_file (str | None): optional, path to a file containing Seqr IDs
     """
@@ -468,6 +479,7 @@ def main(
         results_object=results_object,
         link_engine=link_builder,
         ext_id_map=external_id_map,
+        igv_dir=igv_dir,
     )
 
     # if this fails with a NoVariantsFoundException, there were no variants to present in the whole cohort

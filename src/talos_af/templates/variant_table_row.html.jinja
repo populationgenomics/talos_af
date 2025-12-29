@@ -1,19 +1,19 @@
 <tr
     data-sample-name="{{sample.name|e}}"
     data-variant-coords="{{variant.chrom|e}}:{{variant.pos}}"
-    data-variant-chrom="{{variant.chrom|e}}"
-    data-variant-pos="{{variant.pos|e}}"
-    data-variant-ref="{{variant.ref|e}}"
-    data-variant-alt="{{variant.alt|e}}"
+    data-variant-chrom="{{variant.chrom}}"
+    data-variant-pos="{{variant.pos}}"
+    data-variant-ref="{{variant.ref}}"
+    data-variant-alt="{{variant.alt}}"
     data-variant-change="{{variant.change|e}}"
     data-gene="{{variant.gene|e}}"
+    data-symbol="{{variant.symbol|e}}"
     data-variant-info='{{variant.info|tojson}}'
     data-transcript-consequences='{{variant.transcript_consequences|tojson}}'
 >
     <td style="white-space: nowrap" class="details-control">
         {# Individual ID - Click to expand details #}
         <button type="button" class="btn btn-link btn-sm p-0 details-toggle" aria-label="Toggle details"><i class="bi-plus-square"></i></button>
-
         {% if sample.sample_link %}
             <a href="{{sample.sample_link|e}}" target="_blank">
                 {{sample.name|e}}
@@ -40,17 +40,15 @@
             {% if variant.info.gnomad_af_joint is not none %}
             | AF: <a href="{{ gnomad_url }}" target="_blank">{{ variant.info.gnomad_af_joint | round(4) }}</a>
             {% endif %}
+        <br>
         </small>
+        {% if sample.project %}
+            <a href="http://localhost:60151/load?file={{sample.igv_dir}}/{{sample.name|e}}.cram&locus={{variant.chrom|e}}:{{variant.pos|e}}-{{variant.pos|e}}">View in IGV</a>
+        {% endif %}
     </td>
     <td>
         {# Gene symbol #}
-        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.acmg.gene|e}}</a>  ({{ variant.acmg.moi|e }}{% if variant.acmg.reportable != "all" %} - {{ variant.acmg.specific_type }} only{% endif %})
-    </td>
-    <td>
-        {# CompHet #}
-        {% if variant.support_vars %}
-            {{ variant.support_vars }}
-        {% endif %}
+        <a href="https://panelapp-aus.org/panels/entities/{{variant.symbol|urlencode}}" target="_blank">{{variant.symbol|e}}</a>  ({{ variant.acmg.moi|e }}{% if variant.acmg.reportable != "all" %} - {{ variant.acmg.specific_type }} only{% endif %})
     </td>
     <td>
         {# First Tagged #}
@@ -59,7 +57,13 @@
     <td>
         {# CSQ #}
         {% if variant.csq %}
-            {{variant.csq|e}}
+
+            {% if variant.high_impact %}
+                <b style='color:red;'>{{variant.csq|e}}</b>
+            {% else %}
+                {{variant.csq|e}}
+            {% endif %}
+
             <small>
             {% if variant.hgvsps %}
                 <br>
@@ -67,12 +71,10 @@
             {% endif %}
             </small>
 
-            {% if variant.high_impact %}
-                <br><b style='color:red;'>High Impact</b>
-            {% endif %}
             {% if variant.clinvar_path %}
-                <br>ClinVar <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">{{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }} </a>{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}
+                <br><a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">ClinVar {{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }} </a>{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}
             {% endif %}
+
         {% endif %}
     </td>
 </tr>

@@ -81,7 +81,6 @@
                             <th class="group-separator">Individual</th>
                             <th>Variant</th>
                             <th>Gene (MOI)</th>
-                            <th>CompHet</th>
                             <th>First Tagged</th>
                             <th>CSQ</th>
                         </tr>
@@ -89,7 +88,6 @@
                             <th><input type="text" placeholder="Search Individual"></th>
                             <th><input type="text" placeholder="Search Variant"></th>
                             <th><input type="text" placeholder="Search Gene (MOI)"></th>
-                            <th><input type="text" placeholder="Search CompHet"></th>
                             <th><input type="text" placeholder="Search First Tagged"></th>
                             <th><input type="text" placeholder="Search CSQ"></th>
                         </tr>
@@ -144,7 +142,7 @@
                     </div>
                 </div>
                 {% else %}
-                <p class="text-muted">No configuration details available.</p>
+                    <p class="text-muted">No configuration details available.</p>
                 {% endif %}
             </div>
         </div>
@@ -231,11 +229,19 @@
                 return value;
             }
 
-            try {
-                return JSON.parse(value);
-            } catch (error) {
-                return fallback;
+            // NEW: Only try to JSON.parse if it looks like an object or array
+            // This prevents "G" or "A" from causing a syntax error
+            if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+                try {
+                    return JSON.parse(value);
+                } catch (error) {
+                    console.error("Error parsing " + attribute, error);
+                    return fallback;
+                }
             }
+
+            // It's a plain string (like "G", "A", or "11"), return it as is
+            return value;
         }
 
         function formatChildRow(rowData) {
@@ -263,10 +269,10 @@
 
             if (variantInfo.gnomad_ac_joint !== undefined && variantInfo.gnomad_ac_joint !== null) {
                 var gnomadId = [
-                    rowData.chrom,
-                    rowData.pos,
-                    rowData.ref,
-                    rowData.alt,
+                    varChrom,
+                    varPos,
+                    varRef,
+                    varAlt,
                 ].join('-');
 
                 var gnomadAfVal = variantInfo.gnomad_af_joint;
@@ -290,18 +296,19 @@
             html += '<dt class="col-sm-4">External Links</dt><dd class="col-sm-8">';
 
             var variantForLinks = {
-                chrom: rowData.chrom,
-                pos: rowData.pos,
-                ref: rowData.ref,
-                alt: rowData.alt
+                chrom: varChrom,
+                pos: varPos,
+                ref: varRef,
+                alt: varAlt
             };
             var gene = rowData.gene;
+            var symbol = rowData.symbol;
 
             html += '<a href="' + spliceAiUrl(variantForLinks) + '" target="_blank">SpliceAI</a> | ';
             html += '<a href="' + ucscUrl(variantForLinks) + '" target="_blank">UCSC</a> | ';
             html += '<a href="' + decipherUrl(gene, true) + '" target="_blank">Decipher</a> ';
             html += '<a href="' + decipherUrl(gene, false) + '" target="_blank">(Clinical)</a> | ';
-            html += '<a href="' + omimGeneUrl(gene) + '" target="_blank">OMIM</a>';
+            html += '<a href="' + omimGeneUrl(symbol) + '" target="_blank">OMIM</a>';
             html += '</dd></dl></div></div></div></div>';
 
             html += '</div></div>';
@@ -408,11 +415,12 @@
                     variantCoords: tr.attr('data-variant-coords') || '',
                     variantChange: tr.attr('data-variant-change') || '',
                     gene: tr.attr('data-gene') || '',
+                    symbol: parseDataAttribute(tr, 'data-symbol', ''),
                     variantInfo: parseDataAttribute(tr, 'data-variant-info', {}),
-                    chrom: parseDataAttribute(tr, 'data-variant-chrom', {}),
+                    chrom: parseDataAttribute(tr, 'data-variant-chrom', ''),
                     pos: parseDataAttribute(tr, 'data-variant-pos', {}),
-                    ref: parseDataAttribute(tr, 'data-variant-ref', {}),
-                    alt: parseDataAttribute(tr, 'data-variant-alt', {}),
+                    ref: parseDataAttribute(tr, 'data-variant-ref', ''),
+                    alt: parseDataAttribute(tr, 'data-variant-alt', ''),
                     transcriptConsequences: parseDataAttribute(tr, 'data-transcript-consequences', [])
                 };
 

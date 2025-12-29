@@ -355,6 +355,9 @@ class RunTalosAfNextFlow(stage.DatasetStage):
 
         pedigree = batch_instance.read_input(dataset.write_ped_file(out_path=outputs['pedigree']))
 
+        # create the expected path to CRAM files for this dataset
+        cram_dir = dataset.prefix() / 'cram'
+
         # nextflow go brrrr
         job.command(
             f"""
@@ -365,6 +368,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
+                --igv_dor {cram_dir} \\
                 --mane_input {mane} \\
                 --gnomad_echtvar {gnomad_zip} \\
                 --revel_echtvar {revel_zip} \\
