@@ -190,7 +190,12 @@ class AD(BaseMoi):
 
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.het_samples.union(principal.hom_samples):
-            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
+            classifications[sample_id].append(
+                ReportableVariant(
+                    var_id=principal.coordinates.string_format,
+                    genotype='Het' if sample_id in principal.het_samples else 'Hom',
+                )
+            )
 
         return classifications
 
@@ -215,7 +220,12 @@ class AR(BaseMoi):
 
         # autosomal dominant doesn't require support, but consider het and hom
         for sample_id in principal.hom_samples:
-            classifications[sample_id].append(ReportableVariant(var_id=principal.coordinates.string_format))
+            classifications[sample_id].append(
+                ReportableVariant(
+                    var_id=principal.coordinates.string_format,
+                    genotype='Hom',
+                )
+            )
 
         for sample_id in principal.het_samples:
             support_vars = []
@@ -228,6 +238,7 @@ class AR(BaseMoi):
                     ReportableVariant(
                         var_id=principal.coordinates.string_format,
                         support_vars={partner.coordinates.string_format for partner in support_vars},
+                        genotype='Het',
                     )
                 )
 
@@ -256,6 +267,7 @@ class XL(BaseMoi):
             classifications[sample_id].append(
                 ReportableVariant(
                     var_id=principal.coordinates.string_format,
+                    genotype='Het' if sample_id in principal.het_samples else 'Hom',
                 )
             )
 

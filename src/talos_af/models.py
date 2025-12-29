@@ -46,7 +46,7 @@ class VariantAf(BaseModel):
     het_samples: set[str] = Field(default_factory=set, exclude=True)
     hom_samples: set[str] = Field(default_factory=set, exclude=True)
     phased: dict = Field(default_factory=dict, exclude=True)
-    transcript_consequences: list[dict[str, str | float | int]]
+    transcript_consequences: dict[str, str | float | int]
 
     def __str__(self):
         return repr(self)
@@ -67,6 +67,7 @@ class ReportableVariant(BaseModel):
     """
 
     var_id: str
+    genotype: str
     support_vars: set[str] = Field(default_factory=set)
     first_seen: str = get_date_string()
 
