@@ -22,6 +22,7 @@ classifiers=[
 
 dependencies=[
     'cyvcf2',
+    'httpx',
     'loguru',
     'mendelbrot',
     'pydantic',
