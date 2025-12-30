@@ -6,7 +6,7 @@ from itertools import combinations_with_replacement
 from typing import Any
 
 import cyvcf2
-import requests
+import httpx
 from cloudpathlib.anypath import to_anypath
 from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
@@ -454,9 +454,23 @@ def apply_gene_specific_rules(
 def get_latest_zenodo_file(record_id: int) -> tuple[str, str]:
     """Take a zenodo record ID, find the latest version of that record, and return the attachment link."""
 
+    manual_retries = 3
+
     # use this record ID to find the latest record ID
     latest_url = f'https://zenodo.org/api/records/{record_id}/versions/latest'
-    data = requests.get(latest_url, timeout=60).json()
+
+    data: dict | None = None
+    while manual_retries > 0:
+        manual_retries -= 1
+        try:
+            response = httpx.get(latest_url, headers={'Accept': 'application/json'}, timeout=60, follow_redirects=True)
+            data = response.json()
+        except (httpx.ConnectTimeout, httpx.DecodingError):
+            logger.error(f'Failed to get latest zenodo record ID: {record_id}')
+            continue
+
+    if data is None:
+        logger.error(f'Failed to get latest zenodo record ID: {record_id}, exhausted retries')
 
     # navigate to the files, and find the content URL we can use to download
     file_link = data['files'][0]['links']['self']
