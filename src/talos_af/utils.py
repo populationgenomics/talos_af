@@ -191,7 +191,7 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
 
 
 def get_revel_as_dict(revel_details: str | None) -> dict[str, str]:
-    if revel_details is None:
+    if revel_details in {None, '.'}:
         return {}
 
     score, transcripts = revel_details.split('~')
