@@ -1,8 +1,11 @@
 test
 build
 .pytest*
+.git
 .github
 .coverage*
 .nextflow
 
 large_files
+work
+*inputs
