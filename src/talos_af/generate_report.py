@@ -23,6 +23,7 @@ from loguru import logger
 from talos_af.bcftools_interpreter import TYPES_RE, classify_change
 from talos_af.config import config_retrieve
 from talos_af.models import ReportableVariant, ResultsAf
+from talos_af.utils import format_logger
 
 JINJA_TEMPLATE_DIR = Path(__file__).absolute().parent / 'templates'
 
@@ -371,20 +372,20 @@ class Variant:
         self.transcript_consequences = variant_annotations.transcript_consequences
 
         # Summarise CSQ strings
-        (self.csq, self.hgvsps) = self.parse_csq(transcript=self.acmg.enst)
+        (self.csq, self.hgvsps) = self.parse_csq()
 
-        # pull up the highest AlphaMissense score, if present
-        am_scores = [float(csq['am_score']) for csq in self.transcript_consequences if csq.get('am_score')]
-        revel_scores = [float(csq['revel']) for csq in self.transcript_consequences if csq.get('revel')]
-
-        self.info['alpha_missense_max'] = max(am_scores) if am_scores else 'missing'
-        self.info['revel_max'] = max(revel_scores) if revel_scores else 'missing'
+        # shove in the AM and REVEL scores, even if they're missing
+        self.info |= {
+            'am_score': self.transcript_consequences.get('am_score') or 'missing',
+            'revel': self.transcript_consequences.get('revel') or 'missing',
+        }
 
     def __str__(self) -> str:
         return self.var_id
 
-    def parse_csq(self, transcript: str | None = None) -> tuple[str, str]:
+    def parse_csq(self) -> tuple[str, str]:
         """
+        This whole method needs to be re-considered in light of 'transcript_consequences' being a single dict, not list
         Parse CSQ variant string returning:
             - set of "consequences" from MANE transcripts
             - Set of variant effects in p. nomenclature (or c. if no p. is available)
@@ -394,27 +395,28 @@ class Variant:
         """
         consequences = set()
         nmd_consequences = set()
-        p_change: str | None = None
 
-        for csq in self.transcript_consequences:
-            type_match = TYPES_RE.match(csq['consequence'])
-            csq_replaced = csq['consequence'].replace('_variant', '').replace('_', ' ')
-            variant_csqs = csq_replaced.split('&')
+        consequence = self.transcript_consequences.get('consequence')
+        aa = self.transcript_consequences.get('amino_acid_change')
 
-            # for the types I know how to parse, update them
-            if type_match:
-                csq['amino_acid_change'] = classify_change(csq['amino_acid_change'], consequence=type_match[0])
+        # for the types I know how to parse, update them
+        if type_match := TYPES_RE.match(consequence):
+            self.transcript_consequences['amino_acid_change'] = classify_change(
+                self.transcript_consequences.get('amino_acid_change'),
+                consequence=type_match[0],
+            )
 
-            # todo decide what to do here - currently skipping NMD transcript consequences
-            if 'NMD transcript' in variant_csqs:
-                variant_csqs.remove('NMD transcript')
-                nmd_consequences.update(variant_csqs)
-                continue
+        p_change = f'{self.transcript_consequences["transcript"]} - {aa}'
 
+        csq_replaced = consequence.replace('_variant', '').replace('_', ' ')
+        variant_csqs = csq_replaced.split('&')
+
+        # todo decide what to do here - currently skipping NMD transcript consequences
+        if 'NMD transcript' in variant_csqs:
+            variant_csqs.remove('NMD transcript')
+            nmd_consequences.update(variant_csqs)
+        else:
             consequences.update(variant_csqs)
-
-            if csq['transcript'] == transcript and csq.get('amino_acid_change'):
-                p_change = f'{transcript} - {csq["amino_acid_change"]}'
 
         # simplify the consequence strings
         if consequences:
@@ -494,4 +496,5 @@ def main(
 
 
 if __name__ == '__main__':
+    format_logger(log_level=logger.level('INFO').no)
     cli_main()
