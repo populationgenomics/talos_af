@@ -397,7 +397,6 @@ class Variant:
         nmd_consequences = set()
 
         consequence = self.transcript_consequences.get('consequence')
-        aa = self.transcript_consequences.get('amino_acid_change')
 
         # for the types I know how to parse, update them
         if type_match := TYPES_RE.match(consequence):
@@ -406,7 +405,11 @@ class Variant:
                 consequence=type_match[0],
             )
 
-        p_change = f'{self.transcript_consequences["transcript"]} - {aa}'
+        p_change = (
+            f'{self.transcript_consequences["transcript"]} - {self.transcript_consequences["amino_acid_change"]}'
+            if self.transcript_consequences.get('amino_acid_change')
+            else ''
+        )
 
         csq_replaced = consequence.replace('_variant', '').replace('_', ' ')
         variant_csqs = csq_replaced.split('&')
