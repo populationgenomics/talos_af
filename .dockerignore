@@ -9,3 +9,4 @@ build
 large_files
 work
 *inputs
+nextflow/*_outputs
