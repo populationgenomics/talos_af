@@ -127,3 +127,8 @@ replace = "{new_version}"
 filename = "README.md"
 search = "{current_version}"
 replace = "{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "nextflow/talos_af.config"
+search = "params.container = 'talos_af:{current_version}"
+replace = "params.container = 'talos_af:{new_version}"
