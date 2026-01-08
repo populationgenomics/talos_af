@@ -102,6 +102,11 @@ def process_stop_gained(alteration: str) -> str:
 
 def classify_change(alteration: str, consequence: str | None = None) -> str:
     """Detect some known variant types."""
+    # trust correctly assigned consequences
+    if alteration.startswith('p.'):
+        logger.debug(f'Detected {alteration} as a p., no processing')
+        return alteration
+
     if consequence:
         match consequence:
             case 'missense':
