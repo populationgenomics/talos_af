@@ -111,6 +111,7 @@ class BaseMoi(abc.ABC):
         self,
         principal: models.VariantAf,
         comp_het: utils_af.CompHetDict,
+        pedigree: PedigreeParser,
     ) -> dict[str, list[models.ReportableVariant]]:
         """
         run all applicable inheritance patterns and finds good fits
@@ -179,7 +180,8 @@ class AD(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,
+        _comp_het: utils_af.CompHetDict,
+        _pedigree: PedigreeParser,
     ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
@@ -210,6 +212,7 @@ class AR(BaseMoi):
         self,
         principal: models.VariantAf,
         comp_het: utils_af.CompHetDict,
+        _pedigree: PedigreeParser,
     ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
@@ -253,7 +256,8 @@ class XL(BaseMoi):
     def run(
         self,
         principal: models.VariantAf,
-        comp_het: utils_af.CompHetDict,
+        _comp_het: utils_af.CompHetDict,
+        pedigree: PedigreeParser,
     ) -> dict[str, list[models.ReportableVariant]]:
         """Simplest MOI, exclusions based on HOM count and AF."""
 
@@ -262,12 +266,18 @@ class XL(BaseMoi):
         if self.variant_too_common(principal):
             return classifications
 
-        # autosomal dominant doesn't require support, but consider het and hom
-        for sample_id in principal.hom_samples | principal.het_samples:
+        # shorthand for a union we use a couple of times below
+        all_sample_ids = principal.hom_samples | principal.het_samples
+        males = {sam_id for sam_id in all_sample_ids if pedigree.participants[sam_id].sex == 1}
+
+        # first assess males
+        for sample_id in all_sample_ids:
+            sample_id_genotype = 'Hom' if sample_id in principal.hom_samples else 'Het'
+            sample_id_sex = 'Male' if sample_id in males else 'Female'
             classifications[sample_id].append(
                 ReportableVariant(
                     var_id=principal.coordinates.string_format,
-                    genotype='Het' if sample_id in principal.het_samples else 'Hom',
+                    genotype=f'{sample_id_genotype} ({sample_id_sex})',
                 )
             )
 

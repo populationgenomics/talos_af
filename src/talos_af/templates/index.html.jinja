@@ -273,7 +273,7 @@
             html += '<h5 class="card-title">Variant Details</h5><dl class="row">';
 
             html += '<dt class="col-sm-4">Coordinates</dt><dd class="col-sm-8">';
-            html += escapeHtml(rowData.variantCoords) + '<br>' + escapeHtml(rowData.variantChange);
+            html += escapeHtml(rowData.variantCoords) + escapeHtml(rowData.variantChange);
             html += '</dd>';
 
             html += '<dt class="col-sm-4">Allele Counts</dt><dd class="col-sm-8">';
