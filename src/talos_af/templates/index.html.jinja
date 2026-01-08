@@ -329,35 +329,31 @@
 
             html += '</div></div>';
 
-            if (transcriptConsequences && transcriptConsequences.length > 0) {
+            if (transcriptConsequences) {
                 html += '<div class="col-12 mt-3"><div class="card"><div class="card-body">';
-                html += '<h5 class="card-title">Transcript Consequences</h5>';
+                html += '<h5 class="card-title">Transcript Consequence</h5>';
                 html += '<div class="table-responsive"><table class="table table-sm table-striped">';
                 html += '<thead class="table-dark"><tr>';
                 html += '<th>Gene</th><th>Transcript</th><th>Protein change</th><th>Consequence</th>';
                 html += '<th>Biotype</th><th>AlphaMissense</th><th>REVEL</th>';
                 html += '</tr></thead><tbody>';
 
-                transcriptConsequences.forEach(function(csq) {
-                    if (csq) {
-                        var transcriptId = csq.transcript || '';
-                        html += '<tr>';
-                        html += '<td>' + escapeHtml(csq.gene || '') + '</td>';
-                        html += '<td><small>' + escapeHtml(transcriptId) + '</small></td>';
-                        var proteinChange = (csq.amino_acid_change || '');
-                        html += '<td><small>' + escapeHtml(proteinChange.trim()) + '</small>';
-                        html += '</td>';
-                        html += '<td><small>' + escapeHtml(csq.consequence || '') + '</small></td>';
-                        html += '<td><small>' + escapeHtml(csq.biotype || '') + '</small></td>';
-                        html += '<td>' + escapeHtml(csq.am_class || '');
-                        if (csq.am_pathogenicity && typeof csq.am_pathogenicity === 'number') {
-                            html += ' (' + csq.am_pathogenicity.toFixed(2) + ')';
-                        }
-                        html += '</td>';
-                        html += '<td>' + escapeHtml(csq.revel || '');
-                        html += '</td></tr>';
-                    }
-                });
+                var transcriptId = transcriptConsequences.transcript || '';
+                html += '<tr>';
+                html += '<td>' + escapeHtml(transcriptConsequences.gene || '') + '</td>';
+                html += '<td><small>' + escapeHtml(transcriptId) + '</small></td>';
+                var proteinChange = (transcriptConsequences.amino_acid_change || '');
+                html += '<td><small>' + escapeHtml(proteinChange.trim()) + '</small>';
+                html += '</td>';
+                html += '<td><small>' + escapeHtml(transcriptConsequences.consequence || '') + '</small></td>';
+                html += '<td><small>' + escapeHtml(transcriptConsequences.biotype || '') + '</small></td>';
+                html += '<td>' + escapeHtml(transcriptConsequences.am_class || '');
+                if (transcriptConsequences.am_pathogenicity && typeof transcriptConsequences.am_pathogenicity === 'number') {
+                    html += ' (' + transcriptConsequences.am_pathogenicity.toFixed(2) + ')';
+                }
+                html += '</td>';
+                html += '<td>' + escapeHtml(transcriptConsequences.revel || '');
+                html += '</td></tr>';
 
                 html += '</tbody></table></div></div></div></div>';
             }
