@@ -23,7 +23,7 @@ END_INDEX = 4
 DETAILS_INDEX = 8
 
 # +/- this is added to each gene region, this default can be overridden
-FLANKING_REGION = 2000
+FLANKING_REGION = 500
 
 # regular expressions to parse out sections of the GFF3 annotations
 GENE_ID_RE = re.compile(r'gene:(ENSG\d+);')
