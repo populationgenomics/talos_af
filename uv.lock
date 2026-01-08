@@ -2093,10 +2093,11 @@ wheels = [
 
 [[package]]
 name = "talos-af"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "." }
 dependencies = [
     { name = "cyvcf2" },
+    { name = "httpx" },
     { name = "loguru" },
     { name = "mendelbrot" },
     { name = "pydantic" },
@@ -2119,6 +2120,7 @@ requires-dist = [
     { name = "bump-my-version", marker = "extra == 'dev'" },
     { name = "cpg-flow", marker = "extra == 'cpg'" },
     { name = "cyvcf2" },
+    { name = "httpx" },
     { name = "loguru" },
     { name = "mendelbrot" },
     { name = "pre-commit", marker = "extra == 'dev'" },

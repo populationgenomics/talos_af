@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim AS base
+FROM ghcr.io/astral-sh/uv:python3.10-trixie-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,7 +10,7 @@ RUN apt update && apt install -y --no-install-recommends \
         libbz2-1.0 \
         libcurl4 \
         liblzma5 \
-        openjdk-17-jdk-headless \
+        openjdk-21-jdk-headless \
         procps \
         wget \
         zip \
@@ -78,4 +78,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Place executables in the environment at the front of the path
 ENV PATH="/talos_af/.venv/bin:$PATH"
 
-ENV VERSION=0.0.3
+ENV VERSION=0.0.4

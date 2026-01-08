@@ -58,7 +58,7 @@ def main(
         comp_het_dict = utils_af.find_comp_hets(variants, pedigree)
         moi_to_use = acmg_spec[gene_id]['moi']
         for variant in variants:
-            if results := moi_filter_dict[moi_to_use].run(variant, comp_het_dict):
+            if results := moi_filter_dict[moi_to_use].run(variant, comp_het_dict, pedigree):
                 # apply specific rules if required
                 if acmg_spec[gene_id]['reportable'] == 'specific':
                     satisfies_conditions = utils_af.apply_gene_specific_rules(

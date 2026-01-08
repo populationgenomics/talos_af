@@ -17,13 +17,13 @@ class ParseAcmgSpec(stage.MultiCohortStage):
     Read the TSV representing the ACMG specification, and parse it
     """
 
-    def expected_outputs(self, multicohort: targets.MultiCohort) -> dict[str, Path]:
+    def expected_outputs(self, _multicohort: targets.MultiCohort) -> dict[str, Path]:
         return {'json': self.prefix / ACMG_VERSION / 'parsed_spec.json'}
 
     def queue_jobs(
         self,
         multicohort: targets.MultiCohort,
-        inputs: stage.StageInput,
+        _inputs: stage.StageInput,
     ) -> stage.StageOutput:
         output = self.expected_outputs(multicohort)
 
@@ -54,7 +54,7 @@ class GenerateBedFromAcmg(stage.MultiCohortStage):
     The NF workflow includes a fresh generation of this and a region filter, but this is required to export VCF from MT
     """
 
-    def expected_outputs(self, dataset: targets.MultiCohort) -> dict[str, Path]:
+    def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         return {'bed': self.prefix / ACMG_VERSION / 'parsed_spec.bed'}
 
     def queue_jobs(self, multicohort: targets.MultiCohort, inputs: stage.StageInput) -> stage.StageOutput:
@@ -83,7 +83,7 @@ class GenerateBedFromAcmg(stage.MultiCohortStage):
 
 @stage.stage(required_stages=GenerateBedFromAcmg)
 class GenerateRevelZip(stage.MultiCohortStage):
-    def expected_outputs(self, dataset: targets.MultiCohort) -> dict[str, Path]:
+    def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
         return {
             'raw': prefix / 'revel.raw.zip',
@@ -134,7 +134,7 @@ class GenerateRevelZip(stage.MultiCohortStage):
 
 @stage.stage(required_stages=GenerateBedFromAcmg)
 class GenerateAlphaMissenseZip(stage.MultiCohortStage):
-    def expected_outputs(self, dataset: targets.MultiCohort) -> dict[str, Path]:
+    def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
         return {
             'raw': prefix / 'am.raw.zip',
@@ -185,7 +185,7 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
 
 @stage.stage(required_stages=GenerateBedFromAcmg)
 class GenerateClinvarZip(stage.MultiCohortStage):
-    def expected_outputs(self, dataset: targets.MultiCohort) -> dict[str, Path]:
+    def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         zenodo_link = config.config_retrieve(['references', 'clinvar_record'])
         rec_id, _dl = utils_af.get_latest_zenodo_file(zenodo_link)
         prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
@@ -249,7 +249,7 @@ class ExportMtFromVds(stage.DatasetStage):
             return {'mt': dataset.prefix() / workflow.get_workflow().name / self.name / f'{to_path(vds).name}.mt'}
         return {}
 
-    def queue_jobs(self, dataset: targets.Dataset, inputs: stage.StageInput) -> stage.StageOutput:
+    def queue_jobs(self, dataset: targets.Dataset, _inputs: stage.StageInput) -> stage.StageOutput:
         output = self.expected_outputs(dataset)
 
         if not (vds := config.config_retrieve(['workflow', 'use_vds', dataset.name])):

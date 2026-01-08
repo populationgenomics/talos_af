@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 from collections import defaultdict
 from functools import cache
 from itertools import combinations_with_replacement
@@ -55,6 +56,46 @@ PHASE_BROKEN: bool = False
 TRUNCATING = {'nonsense', 'frameshift'}
 
 TYPE_RE = re.compile(r'p\.(?P<ref>\D)(?P<codon>\d+)(?P<alt>\D)')
+
+
+def format_logger(
+    log_level: int = logger.level('INFO').no,
+    fmt_string: str = '{time:YYYY-MM-DD HH:mm:ss} - {file.path}:{line} - {level} - {message}',
+    coloured: bool = False,
+) -> None:
+    """
+    loguru is a cleaner interface than the standard logging module, but it doesn't allow for multiple instances
+    instead of calling a get_logger function which returns a logger, we assume that any module using logging has
+    imported `from loguru import logger` to get access to the logger.
+
+    loguru.logger is also resistant to deepcopy, so there really is only a single global instance, meaning that the
+    display/formatting of the logger is global to the entire process, and should only be set once.
+
+    This helper method formats the logger instance with the given parameters, stripping out any previous handlers
+    Because the global logger instance is modified, there is no return value
+
+    >>> from loguru import logger
+    >>> from cpg_flow.utils import format_logger
+    >>> format_logger(log_level=10, fmt_string='{time} {level} {message}', coloured=True)
+    >>> logger.info('This is an info message')
+
+    Args:
+        log_level (int): logging level, defaults to INFO. Can be overridden by config
+        fmt_string (str): format string for this logger, defaults to DEFAULT_LOG_FORMAT
+        coloured (bool): whether to colour the logger output
+    """
+
+    # Remove any previous loguru handlers
+    logger.remove()
+
+    # Add loguru handler with given format and level
+    logger.add(
+        sys.stdout,
+        level=log_level,
+        format=fmt_string,
+        colorize=coloured,
+        enqueue=True,
+    )
 
 
 def process_bed(bed_file: str) -> REGION_DICT:
@@ -290,14 +331,18 @@ def create_small_variant(
 
     phased = get_phase_data(samples, var)
 
-    transcript_consequences: list[dict[str, str | int | float]] = info.pop('transcript_consequences')
+    # TODO resolve this at some point so we can have non-transcript ClinVar Path vars come through
+    if 'transcript_consequences' not in info:
+        return None
+
+    transcript_consequences: dict[str, str | int | float] = info.pop('transcript_consequences')
 
     # revise in the future, for now we're skipping any non-transcript consequence variants
     if not transcript_consequences:
         return None
 
     return models.VariantAf(
-        gene=transcript_consequences[0]['ensg'],
+        gene=transcript_consequences['ensg'],
         coordinates=coordinates,
         clinvar_path=clinvar_path,
         high_impact=consequential,
