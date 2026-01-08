@@ -40,7 +40,7 @@ here do not need to have annotation by other sources.
 
 A [workflow config file](nextflow/talos_af.config) has been populated with all required parameters for a test run.
 
-By default, this will use the test data (a trio, 12 variants, corresponding pedigree) and run the full annotation and 
+By default, this will use the test data (a trio, 12 variants, corresponding pedigree) and run the full annotation and
 interpretation workflow.
 
 The first time this runs will be slow-ish, as the downloaded reference data is reformatted to be used as fast annotation
@@ -54,6 +54,6 @@ altered through NextFlow CLI `-[argument] [value]` syntax:
 - `output_dir`: path to a folder where results will be written
 - `processed_annotations`: a folder to contain all the cohort-agnostic files (reformatted annotation files)
 
-We also advise that the `output_dir` for analysis is outside this repository. The test workflow default location is 
-within this directory, but for real-world work mixing results with the codebase can lead to complicated git resolution 
+We also advise that the `output_dir` for analysis is outside this repository. The test workflow default location is
+within this directory, but for real-world work mixing results with the codebase can lead to complicated git resolution
 when updating the tool.
