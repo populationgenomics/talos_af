@@ -42,7 +42,7 @@
             {% endif %}
         <br>
         </small>
-        {% if sample.project %}
+        {% if sample.igv_dir %}
             <a href="http://localhost:60151/load?file={{sample.igv_dir}}/{{sample.name|e}}.cram&locus={{variant.chrom|e}}:{{variant.pos|e}}-{{variant.pos|e}}">View in IGV</a>
         {% endif %}
     </td>
