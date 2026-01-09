@@ -399,9 +399,9 @@ class Variant:
         consequence = self.transcript_consequences.get('consequence')
 
         # for the types I know how to parse, update them
-        if type_match := TYPES_RE.match(consequence):
+        if (type_match := TYPES_RE.match(consequence)) and self.transcript_consequences.get('amino_acid_change'):
             self.transcript_consequences['amino_acid_change'] = classify_change(
-                self.transcript_consequences.get('amino_acid_change'),
+                self.transcript_consequences['amino_acid_change'],
                 consequence=type_match[0],
             )
 
