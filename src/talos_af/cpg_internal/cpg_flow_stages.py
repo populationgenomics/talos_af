@@ -181,7 +181,7 @@ class GenerateClinvarZip(stage.MultiCohortStage):
             'zip': get_clinvarbitration_folder() / 'echtvar.zip',
         }
 
-    def queue_jobs(self, multicohort: MultiCohort, inputs: StageInput) -> StageOutput:
+    def queue_jobs(self, multicohort: MultiCohort, _inputs: StageInput) -> StageOutput:
         outputs = self.expected_outputs(multicohort)
         tmp_files_folder = get_clinvarbitration_folder(temp_folder=True)
         job = run_clinvarbitration.run_clinvarbitration_in_full(
