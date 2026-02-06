@@ -56,25 +56,23 @@
     </td>
     <td>
         {# CSQ #}
-        {% if variant.csq %}
+        {% if variant.clinvar_path %}
+            <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">ClinVar {{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }} </a>{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}<br>
+        {% endif %}
 
+        {% for mane_type, csq, hgvsp in variant.mane_csq %}
             {% if variant.high_impact %}
-                <b style='color:red;'>{{variant.csq|e}}</b>
+                {{mane_type}} <b style='color:red;'>{{csq|e}}</b><br>
             {% else %}
-                {{variant.csq|e}}
+                {{mane_type}} {{csq|e}}<br>
             {% endif %}
 
             <small>
-            {% if variant.hgvsps %}
-                <br>
-                {{variant.hgvsps|e}}
+            {% if hgvsp %}
+                {{hgvsp|e}}<br>
             {% endif %}
             </small>
 
-            {% if variant.clinvar_path %}
-                <br><a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{variant.info.allele_id|urlencode}}[alleleid]" target="_blank">ClinVar {{ variant.info.clinical_significance|replace('Pathogenic/Likely Pathogenic','(Likely) Pathogenic')|replace('missing','')|e }} </a>{% for i in range(variant.info.gold_stars|int) -%}<i class="bi-star"></i>{% endfor %}
-            {% endif %}
-
-        {% endif %}
+        {% endfor %}
     </td>
 </tr>

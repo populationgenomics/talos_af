@@ -7,7 +7,7 @@ name='talos_af'
 description='Talos-like application for applying ACMG Actionable Findings detection in large cohorts'
 readme = "README.md"
 # currently cpg-flow is pinned to this version
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.10,<3.12"
 version="0.0.4"
 license={ "file" = "LICENSE" }
 classifiers=[
@@ -21,6 +21,7 @@ classifiers=[
 ]
 
 dependencies=[
+    'clinvarbitration>=2.2.8',
     'cyvcf2',
     'httpx',
     'loguru',
@@ -56,9 +57,9 @@ include_package_data = true
 [options.package_data]
 'talos_af'=  [
     'config_template.toml',
-    'am_header.txt',
-    'clinvar_header.txt',
-    'revel_header.txt',
+    'vcf_headers/am_header.txt',
+    'vcf_headers/clinvar_header.txt',
+    'vcf_headers/revel_header.txt',
 ]
 
 [tool.mypy]
@@ -95,8 +96,6 @@ section-order = ["future", "standard-library", "third-party", "cpg", "first-part
 
 [tool.ruff.lint.isort.sections]
 cpg = ["metamist", "cpg_flow", "cpg_utils"]
-
-[tool.ruff.lint.per-file-ignores]
 
 [tool.bumpversion]
 current_version = "0.0.4"

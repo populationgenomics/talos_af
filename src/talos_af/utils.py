@@ -181,7 +181,8 @@ def get_phase_data(samples: list[str], var: 'cyvcf2.Variant') -> dict[str, dict[
     # but are un-phased variants
     try:
         if 'PS' in var.FORMAT:
-            for sample, phase, genotype in zip(samples, map(int, var.format('PS')), var.genotypes, strict=True):
+            phase_list = [int(phase_val[0]) for phase_val in var.format('PS')]
+            for sample, phase, genotype in zip(samples, phase_list, var.genotypes, strict=True):
                 # cyvcf2.Variant holds two ints, and a bool for biallelic calls
                 # but only one int and a bool for hemi
                 if len(genotype) == 3:
@@ -241,7 +242,7 @@ def get_revel_as_dict(revel_details: str | None) -> dict[str, str]:
 
 def organise_csq(
     var_details: dict[str, Any],
-    symbol_indexed_lookup: dict[str, dict[str, str]],
+    symbol_indexed_lookup: dict,
 ) -> bool:
     """
     Read the transcript consequences, split into a list of details, integrate Revel and AlphaMissense where applicable.
@@ -249,9 +250,11 @@ def organise_csq(
 
     bcsq = var_details.pop('bcsq', None)
 
+    # set up a list
+    var_details['transcript_consequences'] = []
+
     # no consequences?
     if not isinstance(bcsq, str):
-        var_details['transcript_consequences'] = []
         return False
 
     # get and split revel data
@@ -279,11 +282,17 @@ def organise_csq(
         if txcsq_dict['gene'] not in symbol_indexed_lookup:
             continue
 
-        # skip over non-Mane transcripts
-        if txcsq_dict['transcript'] != symbol_indexed_lookup[txcsq_dict['gene']]['enst']:
+        # skip over non-Mane transcripts - tolerate mane select and plus clinical
+        acmg_gene_section = symbol_indexed_lookup[txcsq_dict['gene']]
+        accepted_transcripts = {
+            mane_details['enst']: mane_type for mane_type, mane_details in acmg_gene_section['mane'].items()
+        }
+        if txcsq_dict['transcript'] not in accepted_transcripts:
             continue
 
-        txcsq_dict['ensg'] = symbol_indexed_lookup[txcsq_dict['gene']]['gene_id']
+        txcsq_dict['mane_type'] = accepted_transcripts[txcsq_dict['transcript']]
+
+        txcsq_dict['ensg'] = acmg_gene_section['ensg']
 
         if any(each_csq in CRITICAL_CSQ_DEFAULT for each_csq in txcsq_dict['consequence'].split('&')):
             consequential = True
@@ -296,7 +305,7 @@ def organise_csq(
         if txcsq_dict['transcript'] in am_dict:
             txcsq_dict.update(**am_dict[txcsq_dict['transcript']])  # type: ignore[arg-type]
 
-        var_details['transcript_consequences'] = txcsq_dict
+        var_details['transcript_consequences'].append(txcsq_dict)
 
     return consequential
 
@@ -331,18 +340,14 @@ def create_small_variant(
 
     phased = get_phase_data(samples, var)
 
-    # TODO resolve this at some point so we can have non-transcript ClinVar Path vars come through
-    if 'transcript_consequences' not in info:
-        return None
-
-    transcript_consequences: dict[str, str | int | float] = info.pop('transcript_consequences')
+    transcript_consequences: list[dict[str, str | int | float]] = info.pop('transcript_consequences')
 
     # revise in the future, for now we're skipping any non-transcript consequence variants
     if not transcript_consequences:
         return None
 
     return models.VariantAf(
-        gene=transcript_consequences['ensg'],
+        gene=transcript_consequences[0]['gene'],
         coordinates=coordinates,
         clinvar_path=clinvar_path,
         high_impact=consequential,

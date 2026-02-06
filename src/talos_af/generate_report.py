@@ -19,8 +19,8 @@ import jinja2
 import pandas as pd
 from cloudpathlib.anypath import to_anypath
 from loguru import logger
+from mendelbrot.bcftools_interpreter import TYPES_RE, classify_change
 
-from talos_af.bcftools_interpreter import TYPES_RE, classify_change
 from talos_af.config import config_retrieve
 from talos_af.models import ReportableVariant, ResultsAf
 from talos_af.utils import format_logger
@@ -152,6 +152,16 @@ class HTMLBuilder:
             )
         self.samples.sort(key=lambda x: x.name)
 
+    @staticmethod
+    def mane_to_string(mane_data: dict[str, dict[str, str]]) -> str:
+        """Munge the MANE data block to be suitable for HTML embedding."""
+        string_bits: list[str] = []
+        for mane_type, mane_entry in mane_data.items():
+            details = ', '.join(value for key, value in mane_entry.items())
+            string_bits.append(f'{mane_type}: {details}')
+
+        return '. '.join(string_bits)
+
     def read_metadata(self) -> dict[str, pd.DataFrame]:
         """
         parses into a general table
@@ -169,9 +179,7 @@ class HTMLBuilder:
                 {
                     'Symbol': section.gene,
                     'MOI': section.moi,
-                    'Gene ID': section.gene_id,
-                    'NM ID': section.nm_id,
-                    'ENST': section.enst,
+                    'MANE': self.mane_to_string(section.mane),
                     'Reportable': section.reportable,
                     'Specific Type': section.specific_type,
                 }
@@ -371,21 +379,24 @@ class Variant:
         self.support_vars = ', '.join(sorted(instance.support_vars))
         self.transcript_consequences = variant_annotations.transcript_consequences
 
-        # Summarise CSQ strings
-        (self.csq, self.hgvsps) = self.parse_csq()
+        # Summarise CSQ strings per MANE entity
+        self.mane_csq = self.parse_csq()
 
         # shove in the AM and REVEL scores, even if they're missing
+        all_am_scores = [
+            x.get('am_score') for x in self.transcript_consequences if isinstance(x.get('am_score'), float)
+        ]
+        all_revel_scores = [x.get('revel') for x in self.transcript_consequences if isinstance(x.get('revel'), float)]
         self.info |= {
-            'am_score': self.transcript_consequences.get('am_score') or 'missing',
-            'revel': self.transcript_consequences.get('revel') or 'missing',
+            'am_score': max(all_am_scores) if all_am_scores else 'missing',
+            'revel': max(all_revel_scores) if all_revel_scores else 'missing',
         }
 
     def __str__(self) -> str:
         return self.var_id
 
-    def parse_csq(self) -> tuple[str, str]:
+    def parse_csq(self) -> list[tuple[str, str, str]]:
         """
-        This whole method needs to be re-considered in light of 'transcript_consequences' being a single dict, not list
         Parse CSQ variant string returning:
             - set of "consequences" from MANE transcripts
             - Set of variant effects in p. nomenclature (or c. if no p. is available)
@@ -393,43 +404,55 @@ class Variant:
         condense massive cdna annotations, e.g.
         c.4978-2_4978-1insAGGTAAGCTTAGAAATGAGAAAAGACATGCACTTTTCATGTTAATGAAGTGATCTGGCTTCTCTTTCTA
         """
-        consequences = set()
-        nmd_consequences = set()
 
-        consequence = self.transcript_consequences.get('consequence')
+        mane_results: list[tuple[str, str, str]] = []
 
-        # for the types I know how to parse, update them
-        if (type_match := TYPES_RE.match(consequence)) and self.transcript_consequences.get('amino_acid_change'):
-            self.transcript_consequences['amino_acid_change'] = classify_change(
-                self.transcript_consequences['amino_acid_change'],
-                consequence=type_match[0],
+        # allow for a separate set of consequences per MANE Select/Plus Clinical
+        for consequence_dict in self.transcript_consequences:
+            consequences = set()
+            nmd_consequences = set()
+
+            consequence = consequence_dict.get('consequence')
+
+            # for the types I know how to parse, update them
+            if (type_match := TYPES_RE.match(consequence)) and consequence_dict.get('amino_acid_change'):
+                consequence_dict['amino_acid_change'] = classify_change(
+                    consequence_dict['amino_acid_change'],
+                    consequence=type_match[0],
+                )
+
+            p_change = (
+                f'{consequence_dict["transcript"]} - {consequence_dict["amino_acid_change"]}'
+                if consequence_dict.get('amino_acid_change')
+                else ''
             )
 
-        p_change = (
-            f'{self.transcript_consequences["transcript"]} - {self.transcript_consequences["amino_acid_change"]}'
-            if self.transcript_consequences.get('amino_acid_change')
-            else ''
-        )
+            csq_replaced = consequence.replace('_variant', '').replace('_', ' ')
+            variant_csqs = csq_replaced.split('&')
 
-        csq_replaced = consequence.replace('_variant', '').replace('_', ' ')
-        variant_csqs = csq_replaced.split('&')
+            if 'NMD transcript' in variant_csqs:
+                variant_csqs.remove('NMD transcript')
+                nmd_consequences.update(variant_csqs)
+            else:
+                consequences.update(variant_csqs)
 
-        # todo decide what to do here - currently skipping NMD transcript consequences
-        if 'NMD transcript' in variant_csqs:
-            variant_csqs.remove('NMD transcript')
-            nmd_consequences.update(variant_csqs)
-        else:
-            consequences.update(variant_csqs)
+            # simplify the consequence strings
+            if consequences:
+                csq_string = ', '.join(consequences)
+            elif nmd_consequences:
+                csq_string = 'NMD only: ' + ', '.join(nmd_consequences)
+            else:
+                csq_string = 'None?'
 
-        # simplify the consequence strings
-        if consequences:
-            csq_string = ', '.join(consequences)
-        elif nmd_consequences:
-            csq_string = 'NMD only: ' + ', '.join(nmd_consequences)
-        else:
-            csq_string = 'None?'
+            mane_results.append(
+                (
+                    consequence_dict['mane_type'],
+                    csq_string,
+                    p_change,
+                ),
+            )
 
-        return csq_string, p_change
+        return mane_results
 
 
 def cli_main():

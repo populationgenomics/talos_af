@@ -22,7 +22,7 @@ def parse_and_filter_tsv(input_file: str, regions: REGION_DICT, output: str):
     with (
         zipfile.ZipFile(input_file) as ziphandle,
         gzip.open(output, 'wt') as out,
-        resources.open_text('talos_af', 'revel_header.txt') as head_in,
+        (resources.files('talos_af') / 'vcf_headers' / 'revel_header.txt').open() as head_in,
     ):
         for line in head_in:
             out.write(line)

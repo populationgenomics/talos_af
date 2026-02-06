@@ -5,83 +5,100 @@ nextflow.enable.dsl=2
 include { AnnotateCsq } from './modules/AnnotateCsq/main'
 include { AnnotateWithEchtvar } from './modules/AnnotateWithEchtvar/main'
 include { ApplyMoiFiltering } from './modules/ApplyMoiFiltering/main'
+include { DownloadClinVarFiles } from './modules/DownloadClinVarFiles/main'
 include { EncodeAlphaMissense } from './modules/EncodeAlphaMissense/main'
 include { EncodeClinvar } from './modules/EncodeClinvar/main'
 include { EncodeRevel } from './modules/EncodeRevel/main'
 include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
 include { GenerateHtmlReport } from './modules/GenerateHtmlReport/main'
 include { ParseAlphaMissense } from './modules/ParseAlphaMissense/main'
-include { ParseClinvar } from './modules/ParseClinvar/main'
-include { ParseGff3IntoBed } from './modules/ParseGff3IntoBed/main'
 include { ParseRevel } from './modules/ParseRevel/main'
 include { PrepareAcmgSpec } from './modules/PrepareAcmgSpec/main'
+include { ResummariseClinVar } from './modules/ResummariseClinVar/main'
 
 workflow {
+    main:
+
+    def timestamp = new java.util.Date().format('yyyy-MM')
 
     // populate various input channels
-    ch_ref_genome = channel.fromPath(params.ref_genome, checkIfExists: true)
-	ch_acmg_spec = channel.fromPath(params.acmg_spec, checkIfExists: true)
-	ch_mane_input = channel.fromPath(params.mane_input, checkIfExists: true)
-	ch_gff3 = channel.fromPath(params.gff_input, checkIfExists: true)
+    ch_ref_genome = Channel.fromPath(params.ref_genome, checkIfExists: true)
+	ch_acmg_spec = Channel.fromPath(params.acmg_spec, checkIfExists: true)
+	ch_mane_input = Channel.fromPath(params.mane_input, checkIfExists: true)
+	ch_gff3 = Channel.fromPath(params.gff_input, checkIfExists: true)
 
-    ch_input_vcf = channel.fromPath(params.input_vcf, checkIfExists: true)
-    ch_input_vcf_index = channel.fromPath("${params.input_vcf}.tbi", checkIfExists: true)
-    ch_pedigree = channel.fromPath(params.pedigree, checkIfExists: true)
-    ch_config = channel.fromPath(params.config, checkIfExists: true)
+    ch_input_vcf = Channel.fromPath(params.input_vcf, checkIfExists: true)
+    ch_input_vcf_index = Channel.fromPath("${params.input_vcf}.tbi", checkIfExists: true)
+    ch_pedigree = Channel.fromPath(params.pedigree, checkIfExists: true)
+    ch_config = Channel.fromPath(params.config, checkIfExists: true)
 
     // read the echtvar reference file as an input channel
-    ch_gnomad_echtvar = channel.fromPath(params.gnomad_echtvar, checkIfExists: true)
+    ch_gnomad_echtvar = Channel.fromPath(params.gnomad_echtvar, checkIfExists: true)
 
     // optional path to a previous set of results
-    ch_previous_results = channel.fromPath(params.previous_results, checkIfExists: true)
+    ch_previous_results = Channel.fromPath(params.previous_results, checkIfExists: true)
 
     PrepareAcmgSpec(
         ch_acmg_spec,
         ch_mane_input,
     )
 
-    ParseGff3IntoBed(
-        PrepareAcmgSpec.out,
-        ch_gff3,
-    )
-
     // generate the AlphaMissense zip if it doesn't already exist
     if (file(params.alphamissense_echtvar).exists()) {
-        ch_alphamissense_echtvar = channel.fromPath(params.alphamissense_echtvar)
+        ch_alphamissense_echtvar = Channel.fromPath(params.alphamissense_echtvar)
     }
     else {
-    	ch_alphamissense_input = channel.fromPath(params.alphamissense_input, checkIfExists: true)
+    	ch_alphamissense_input = Channel.fromPath(params.alphamissense_input, checkIfExists: true)
         ParseAlphaMissense(
             ch_alphamissense_input,
-            ParseGff3IntoBed.out,
+            PrepareAcmgSpec.out.bed,
         )
         EncodeAlphaMissense(ParseAlphaMissense.out)
         ch_alphamissense_echtvar = EncodeAlphaMissense.out
     }
 
     // generate the Clinvar zip if it doesn't already exist
+
+    // does this month's clinvarbitration data exist?
+    String current_clinvarbitration = "${params.processed_annotations}/clinvarbitration_${timestamp}.zip"
+
     if (file(params.clinvar_echtvar).exists()) {
-        ch_clinvar_echtvar = channel.fromPath(params.clinvar_echtvar)
+        ch_clinvar_echtvar = Channel.fromPath(params.clinvar_echtvar)
     }
     else {
-        ch_clinvar_tar = channel.fromPath(params.clinvar, checkIfExists: true)
-        ParseClinvar(
-            ch_clinvar_tar,
-            ParseGff3IntoBed.out,
+    // new workflow elements to go and create it from raw data
+        String subfile = "${params.large_files}/submissions_${timestamp}.txt.gz"
+        String varfile = "${params.large_files}/variants_${timestamp}.txt.gz"
+
+        if (file(subfile).exists() && file(varfile).exists()) {
+            ch_clinvar_sub = Channel.fromPath(subfile)
+            ch_clinvar_var = Channel.fromPath(varfile)
+        } else {
+            DownloadClinVarFiles(timestamp)
+            ch_clinvar_sub = DownloadClinVarFiles.out.submissions
+            ch_clinvar_var = DownloadClinVarFiles.out.variants
+        }
+
+        ResummariseClinVar(
+            ch_clinvar_var,
+            ch_clinvar_sub,
+            timestamp,
         )
-        EncodeClinvar(ParseClinvar.out)
+        EncodeClinvar(
+            ResummariseClinVar.out.vcf,
+        )
         ch_clinvar_echtvar = EncodeClinvar.out
     }
 
     // generate the REVEL zip if it doesn't already exist
     if (file(params.revel_echtvar).exists()) {
-        ch_revel_echtvar = channel.fromPath(params.revel_echtvar)
+        ch_revel_echtvar = Channel.fromPath(params.revel_echtvar)
     }
     else {
-    	ch_revel_input = channel.fromPath(params.revel_input, checkIfExists: true)
+    	ch_revel_input = Channel.fromPath(params.revel_input, checkIfExists: true)
         ParseRevel(
             ch_revel_input,
-            ParseGff3IntoBed.out,
+            PrepareAcmgSpec.out.bed,
         )
         EncodeRevel(ParseRevel.out)
         ch_revel_echtvar = EncodeRevel.out
@@ -90,7 +107,7 @@ workflow {
     FilterVcfToBed(
         ch_input_vcf,
         ch_input_vcf_index,
-        ParseGff3IntoBed.out,
+        PrepareAcmgSpec.out.bed,
         ch_ref_genome,
     )
 
@@ -113,7 +130,7 @@ workflow {
     ApplyMoiFiltering(
         AnnotateCsq.out,
         ch_pedigree,
-        PrepareAcmgSpec.out,
+        PrepareAcmgSpec.out.json,
         ch_config,
         ch_previous_results,
     )

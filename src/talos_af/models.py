@@ -46,7 +46,7 @@ class VariantAf(BaseModel):
     het_samples: set[str] = Field(default_factory=set, exclude=True)
     hom_samples: set[str] = Field(default_factory=set, exclude=True)
     phased: dict = Field(default_factory=dict, exclude=True)
-    transcript_consequences: dict[str, str | float | int]
+    transcript_consequences: list[dict[str, str | float | int]]
 
     def __str__(self):
         return repr(self)
@@ -75,9 +75,8 @@ class ReportableVariant(BaseModel):
 class AcmgEntry(BaseModel):
     gene: str
     moi: str
-    gene_id: str
-    nm_id: str
-    enst: str
+    ensg: str
+    mane: dict[str, dict[str, str]]
     reportable: str
     specific_type: str | None = 'N/A'
 
