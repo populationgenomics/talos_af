@@ -32,8 +32,8 @@ here do not need to have annotation by other sources.
 4. run it!
     ```bash
     nextflow \
-    -c nextflow/talos_af.config \
-        run nextflow/talos_af.nf \
+    -c nextflow.config \
+        run \
         --acmg_spec nextflow/inputs/acmg_secondary.tsv \
         -with-report
     ```

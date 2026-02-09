@@ -2,19 +2,21 @@
 
 nextflow.enable.dsl=2
 
-include { AnnotateCsq } from './modules/AnnotateCsq/main'
-include { AnnotateWithEchtvar } from './modules/AnnotateWithEchtvar/main'
-include { ApplyMoiFiltering } from './modules/ApplyMoiFiltering/main'
-include { DownloadClinVarFiles } from './modules/DownloadClinVarFiles/main'
-include { EncodeAlphaMissense } from './modules/EncodeAlphaMissense/main'
-include { EncodeClinvar } from './modules/EncodeClinvar/main'
-include { EncodeRevel } from './modules/EncodeRevel/main'
-include { FilterVcfToBed } from './modules/FilterVcfToBed/main'
-include { GenerateHtmlReport } from './modules/GenerateHtmlReport/main'
-include { ParseAlphaMissense } from './modules/ParseAlphaMissense/main'
-include { ParseRevel } from './modules/ParseRevel/main'
-include { PrepareAcmgSpec } from './modules/PrepareAcmgSpec/main'
-include { ResummariseClinVar } from './modules/ResummariseClinVar/main'
+include { AnnotateCsq } from 'nextflow/modules/AnnotateCsq/main'
+include { AnnotateWithEchtvar } from 'nextflow/modules/AnnotateWithEchtvar/main'
+include { ApplyMoiFiltering } from 'nextflow/modules/ApplyMoiFiltering/main'
+include { EncodeAlphaMissense } from 'nextflow/modules/EncodeAlphaMissense/main'
+include { EncodeRevel } from 'nextflow/modules/EncodeRevel/main'
+include { FilterVcfToBed } from 'nextflow/modules/FilterVcfToBed/main'
+include { GenerateHtmlReport } from 'nextflow/modules/GenerateHtmlReport/main'
+include { ParseAlphaMissense } from 'nextflow/modules/ParseAlphaMissense/main'
+include { ParseRevel } from 'nextflow/modules/ParseRevel/main'
+include { PrepareAcmgSpec } from 'nextflow/modules/PrepareAcmgSpec/main'
+
+// download and prepare ClinVar data
+include { DownloadClinVarFiles } from 'nextflow/modules/DownloadClinVarFiles/main'
+include { EncodeClinvar } from 'nextflow/modules/EncodeClinvar/main'
+include { ResummariseClinVar } from 'nextflow/modules/ResummariseClinVar/main'
 
 workflow {
     main:
