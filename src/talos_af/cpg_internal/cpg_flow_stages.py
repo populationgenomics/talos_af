@@ -1,14 +1,34 @@
+import datetime
+import functools
 from argparse import ArgumentParser
+from os.path import join
 
 from cpg_flow import stage, targets, workflow
 from cpg_flow.stage import StageInput, StageOutput
 from cpg_flow.targets import MultiCohort
 from cpg_utils import Path, config, hail_batch, to_path
 
-from talos_af import utils as utils_af
+from talos_af.cpg_internal import run_clinvarbitration
 from talos_af.cpg_internal import utils as utils_internal
 
 ACMG_VERSION = config.config_retrieve(['acmg_resources', 'version'])
+
+THIS_MONTH = datetime.datetime.now().strftime('%y-%m')  # noqa: DTZ005
+
+
+@functools.cache
+def get_clinvarbitration_folder(temp_folder: bool = False) -> Path:
+    """
+    get the folder to use for this run
+    sits in a bucket accessible to the operating dataset, in a folder named "clinvarbitration/YY-MM"
+    """
+    return to_path(
+        join(
+            config.config_retrieve(['storage', 'default', 'tmp' if temp_folder else 'default']),
+            'clinvarbitration',
+            THIS_MONTH,
+        ),
+    )
 
 
 @stage.stage
@@ -18,14 +38,17 @@ class ParseAcmgSpec(stage.MultiCohortStage):
     """
 
     def expected_outputs(self, _multicohort: targets.MultiCohort) -> dict[str, Path]:
-        return {'json': self.prefix / ACMG_VERSION / 'parsed_spec.json'}
+        return {
+            'json': self.prefix / ACMG_VERSION / 'parsed_spec.json',
+            'bed': self.prefix / ACMG_VERSION / 'parsed_spec.bed',
+        }
 
     def queue_jobs(
         self,
         multicohort: targets.MultiCohort,
         _inputs: stage.StageInput,
     ) -> stage.StageOutput:
-        output = self.expected_outputs(multicohort)
+        outputs = self.expected_outputs(multicohort)
 
         batch_instance = hail_batch.get_batch()
 
@@ -39,49 +62,17 @@ class ParseAcmgSpec(stage.MultiCohortStage):
         python -m talos_af.scripts.process_acmg_spec \\
             --input {specification_input} \\
             --mane {mane_input} \\
-            --output {job.output}
+            --json_out {job.json_out} \\
+            --bed_out {job.bed_out} \\
         """)
 
-        batch_instance.write_output(job.output, output['json'])
+        batch_instance.write_output(job.json_out, outputs['json'])
+        batch_instance.write_output(job.bed_out, outputs['bed'])
 
-        return self.make_outputs(multicohort, output, jobs=job)
+        return self.make_outputs(multicohort, outputs, jobs=job)
 
 
 @stage.stage(required_stages=ParseAcmgSpec)
-class GenerateBedFromAcmg(stage.MultiCohortStage):
-    """
-    Use the ACMG specification and a GFF3 file to generate a BED file, representing this spec's region of interest.
-    The NF workflow includes a fresh generation of this and a region filter, but this is required to export VCF from MT
-    """
-
-    def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
-        return {'bed': self.prefix / ACMG_VERSION / 'parsed_spec.bed'}
-
-    def queue_jobs(self, multicohort: targets.MultiCohort, inputs: stage.StageInput) -> stage.StageOutput:
-        batch_instance = hail_batch.get_batch()
-
-        output = self.expected_outputs(multicohort)
-
-        local_gff3 = batch_instance.read_input(config.config_retrieve(['references', 'gff3']))
-
-        parsed_spec = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec, 'json'))
-
-        batch_instance = hail_batch.get_batch()
-
-        job = batch_instance.new_bash_job(name='Parse GFF3 into BED', attributes=self.get_job_attrs(multicohort))
-        job.image(config.config_retrieve(['workflow', 'driver_image']))
-        job.command(f"""
-        python -m talos_af.scripts.process_gff3 \\
-            --input {parsed_spec} \\
-            --gff3 {local_gff3} \\
-            --output {job.output}
-        """)
-        batch_instance.write_output(job.output, output['bed'])
-
-        return self.make_outputs(multicohort, output, jobs=job)
-
-
-@stage.stage(required_stages=GenerateBedFromAcmg)
 class GenerateRevelZip(stage.MultiCohortStage):
     def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
@@ -98,7 +89,7 @@ class GenerateRevelZip(stage.MultiCohortStage):
         outputs = self.expected_outputs(multicohort)
         batch_instance = hail_batch.get_batch()
 
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
+        bed_local = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process Revel data')
         job.image(config.config_retrieve(['workflow', 'driver_image']))
@@ -132,7 +123,7 @@ class GenerateRevelZip(stage.MultiCohortStage):
         return self.make_outputs(multicohort, outputs, jobs=job)
 
 
-@stage.stage(required_stages=GenerateBedFromAcmg)
+@stage.stage(required_stages=ParseAcmgSpec)
 class GenerateAlphaMissenseZip(stage.MultiCohortStage):
     def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
         prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
@@ -149,7 +140,7 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
         outputs = self.expected_outputs(multicohort)
         batch_instance = hail_batch.get_batch()
 
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
+        bed_local = batch_instance.read_input(inputs.as_str(multicohort, ParseAcmgSpec, 'bed'))
 
         job = batch_instance.new_bash_job('Download and process AlphaMissense data')
         job.image(config.config_retrieve(['workflow', 'driver_image']))
@@ -183,60 +174,20 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
         return self.make_outputs(multicohort, outputs, jobs=job)
 
 
-@stage.stage(required_stages=GenerateBedFromAcmg)
+@stage.stage()
 class GenerateClinvarZip(stage.MultiCohortStage):
     def expected_outputs(self, _dataset: targets.MultiCohort) -> dict[str, Path]:
-        zenodo_link = config.config_retrieve(['references', 'clinvar_record'])
-        rec_id, _dl = utils_af.get_latest_zenodo_file(zenodo_link)
-        prefix = to_path(config.dataset_path(dataset='common', suffix='references/acmg_actionable')) / ACMG_VERSION
         return {
-            'raw': prefix / f'{rec_id}.tar.gz',
-            'zip': prefix / f'{rec_id}.echtvar.zip',
+            'zip': get_clinvarbitration_folder() / 'echtvar.zip',
         }
 
-    def queue_jobs(
-        self,
-        multicohort: MultiCohort,
-        inputs: StageInput,
-    ) -> StageOutput:
+    def queue_jobs(self, multicohort: MultiCohort, _inputs: StageInput) -> StageOutput:
         outputs = self.expected_outputs(multicohort)
-
-        batch_instance = hail_batch.get_batch()
-
-        _id, dl = utils_af.get_latest_zenodo_file(config.config_retrieve(['references', 'clinvar_record']))
-
-        bed_local = batch_instance.read_input(inputs.as_str(multicohort, GenerateBedFromAcmg, 'bed'))
-
-        job = batch_instance.new_bash_job('Download and process ClinvArbitration data')
-        job.image(config.config_retrieve(['workflow', 'driver_image']))
-
-        job.declare_resource_group(
-            output={
-                'tar.gz': '{root}.tar.gz',
-                'echtvar.zip': '{root}.echtvar.zip',
-            }
+        tmp_files_folder = get_clinvarbitration_folder(temp_folder=True)
+        job = run_clinvarbitration.run_clinvarbitration_in_full(
+            clinvar_file_tmp=tmp_files_folder,
+            final_output=outputs['zip'],
         )
-
-        # download the raw tar file
-        job.command(f'curl -o {job.output["tar.gz"]} {dl}')
-
-        # convert decisions to a VCF, and region filter
-        job.command(f"""
-            tar --no-same-owner -zxf {job.output['tar.gz']}
-
-            python -m talos_af.scripts.process_clinvar \\
-                --input clinvarbitration_data/clinvar_decisions.tsv \\
-                --regions {bed_local} \\
-                --output filtered_clinvar.vcf.gz
-            """)
-
-        # and encode that result as an Echtvar resource
-        job.command(f"""
-            echtvar encode {job.output['echtvar.zip']} /talos_af/echtvar/clinvar_config.json filtered_clinvar.vcf.gz
-        """)
-
-        batch_instance.write_output(job.output, str(outputs['raw']).removesuffix('.tar.gz'))
-
         return self.make_outputs(multicohort, outputs, jobs=job)
 
 
@@ -263,7 +214,7 @@ class ExportMtFromVds(stage.DatasetStage):
         return self.make_outputs(dataset, output, jobs=job)
 
 
-@stage.stage(required_stages=[GenerateBedFromAcmg, ExportMtFromVds])
+@stage.stage(required_stages=[ParseAcmgSpec, ExportMtFromVds])
 class ExportVcfFromMt(stage.DatasetStage):
     """Find the latest AnnotateDataset output for this Dataset, export it as a VCF."""
 
@@ -286,7 +237,7 @@ class ExportVcfFromMt(stage.DatasetStage):
         else:
             input_mt = utils_internal.query_for_latest_analysis(dataset=dataset.name, stage_name='AnnotateDataset')
 
-        bed_file = inputs.as_str(workflow.get_multicohort(), GenerateBedFromAcmg, 'bed')
+        bed_file = inputs.as_str(workflow.get_multicohort(), ParseAcmgSpec, 'bed')
 
         job = batch_instance.new_bash_job(f'VCF from MT: {dataset.name}', attributes=self.get_job_attrs(dataset))
         job.image(config.config_retrieve(['workflow', 'driver_image']))

@@ -20,7 +20,7 @@ here do not need to have annotation by other sources.
 
 1. Build a docker image
     ```bash
-     docker build -t talos_af:0.0.4 .
+     docker build -t talos_af:0.0.5 .
     ```
 2. download all the input resources (used for annotation)
     ```bash
@@ -32,8 +32,8 @@ here do not need to have annotation by other sources.
 4. run it!
     ```bash
     nextflow \
-    -c nextflow/talos_af.config \
-        run nextflow/talos_af.nf \
+    -c nextflow.config \
+        run main.nf \
         --acmg_spec nextflow/inputs/acmg_secondary.tsv \
         -with-report
     ```
@@ -47,7 +47,7 @@ The first time this runs will be slow-ish, as the downloaded reference data is r
 inputs. Outputs will be generated inside the `nextflow` folder. Subsequent reruns will make use of this preprocessing.
 
 We advise that for real analyses you change the following config parameters - these can be edited in the config file, or
-altered through NextFlow CLI `-[argument] [value]` syntax:
+altered through NextFlow CLI `--[argument] [value]` syntax:
 - `cohort`: a name for the collective group of samples being processed, used to label files and create output paths
 - `input_vcf`: path to an input VCF containing one or more samples
 - `pedigree`: path to a pedigree for the corresponding samples

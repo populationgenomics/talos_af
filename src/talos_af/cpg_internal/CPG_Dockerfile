@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.10-trixie-slim AS base
+FROM ghcr.io/astral-sh/uv:python3.11-trixie-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -92,4 +92,4 @@ ENV PATH="/talos_af/.venv/bin:$PATH"
 COPY echtvar echtvar/
 COPY nextflow nextflow/
 
-ENV VERSION=0.0.4
+ENV VERSION=0.0.5

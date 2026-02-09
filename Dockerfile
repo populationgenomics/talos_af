@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.10-trixie-slim AS base
+FROM python:3.11-slim-bullseye AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,7 +10,7 @@ RUN apt update && apt install -y --no-install-recommends \
         libbz2-1.0 \
         libcurl4 \
         liblzma5 \
-        openjdk-21-jdk-headless \
+        openjdk-11-jdk-headless \
         procps \
         wget \
         zip \
@@ -54,6 +54,8 @@ RUN chmod +x /bin/echtvar
 
 FROM base_bcftools_echtvar AS talos
 
+COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
+
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 
@@ -73,9 +75,9 @@ COPY LICENSE pyproject.toml uv.lock README.md ./
 COPY src src/
 COPY echtvar echtvar/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install .
+    uv sync
 
 # Place executables in the environment at the front of the path
 ENV PATH="/talos_af/.venv/bin:$PATH"
 
-ENV VERSION=0.0.4
+ENV VERSION=0.0.5

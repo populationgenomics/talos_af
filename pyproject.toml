@@ -7,8 +7,8 @@ name='talos_af'
 description='Talos-like application for applying ACMG Actionable Findings detection in large cohorts'
 readme = "README.md"
 # currently cpg-flow is pinned to this version
-requires-python = ">=3.10,<3.11"
-version="0.0.4"
+requires-python = ">=3.10,<3.12"
+version="0.0.5"
 license={ "file" = "LICENSE" }
 classifiers=[
     'Environment :: Console',
@@ -21,6 +21,7 @@ classifiers=[
 ]
 
 dependencies=[
+    'clinvarbitration>=2.2.8',
     'cyvcf2',
     'httpx',
     'loguru',
@@ -56,9 +57,9 @@ include_package_data = true
 [options.package_data]
 'talos_af'=  [
     'config_template.toml',
-    'am_header.txt',
-    'clinvar_header.txt',
-    'revel_header.txt',
+    'vcf_headers/am_header.txt',
+    'vcf_headers/clinvar_header.txt',
+    'vcf_headers/revel_header.txt',
 ]
 
 [tool.mypy]
@@ -96,8 +97,6 @@ section-order = ["future", "standard-library", "third-party", "cpg", "first-part
 [tool.ruff.lint.isort.sections]
 cpg = ["metamist", "cpg_flow", "cpg_utils"]
 
-[tool.ruff.lint.per-file-ignores]
-
 [tool.bumpversion]
 current_version = "0.0.4"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
@@ -127,6 +126,6 @@ search = "{current_version}"
 replace = "{new_version}"
 
 [[tool.bumpversion.files]]
-filename = "nextflow/talos_af.config"
-search = "params.container = 'talos_af:{current_version}"
-replace = "params.container = 'talos_af:{new_version}"
+filename = "nextflow.config"
+search = "talos_af:{current_version}"
+replace = "talos_af:{new_version}"

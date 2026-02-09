@@ -115,18 +115,12 @@ else
 fi
 
 # Ensembl GFF3 data
-start_download "https://ftp.ensembl.org/pub/release-115/gff3/homo_sapiens/Homo_sapiens.GRCh38.115.gff3.gz"
-
-# latest clinvarbitration data
-CLINVAR="clinvarbitration.tar.gz"
-start_download \
-  "https://zenodo.org/records/17577130/files/ClinvArbitration_Nov_2025_clinvar_decisions.release.tar.gz?download=1" \
-  "${CLINVAR}"
+start_download "https://ftp.ensembl.org/pub/release-116/vertebrates/gff3/homo_sapiens/Homo_sapiens.GRCh38.116.chr.gff3.gz"
 
 # MANE gene data
-MANE="mane_1_4.summary.txt.gz"
+MANE="mane_1_5.summary.txt.gz"
 start_download \
-  "https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.4/MANE.GRCh38.v1.4.summary.txt.gz" \
+  "https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.5/MANE.GRCh38.v1.5.summary.txt.gz" \
   "${MANE}"
 
 # AlphaMissense raw data
