@@ -92,4 +92,4 @@ ENV PATH="/talos_af/.venv/bin:$PATH"
 COPY echtvar echtvar/
 COPY nextflow nextflow/
 
-ENV VERSION=0.0.4
+ENV VERSION=0.0.5

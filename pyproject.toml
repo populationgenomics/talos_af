@@ -8,7 +8,7 @@ description='Talos-like application for applying ACMG Actionable Findings detect
 readme = "README.md"
 # currently cpg-flow is pinned to this version
 requires-python = ">=3.10,<3.12"
-version="0.0.4"
+version="0.0.5"
 license={ "file" = "LICENSE" }
 classifiers=[
     'Environment :: Console',
@@ -126,6 +126,6 @@ search = "{current_version}"
 replace = "{new_version}"
 
 [[tool.bumpversion.files]]
-filename = "nextflow/talos_af.config"
-search = "params.container = 'talos_af:{current_version}"
-replace = "params.container = 'talos_af:{new_version}"
+filename = "nextflow.config"
+search = "talos_af:{current_version}"
+replace = "talos_af:{new_version}"
