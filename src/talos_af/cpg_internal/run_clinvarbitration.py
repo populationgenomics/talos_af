@@ -30,21 +30,22 @@ def run_clinvarbitration_in_full(clinvar_file_tmp: Path, final_output: Path) -> 
     # region: download clinvar source files
     # for each input, if the file exists in GCP temp, use it, otherwise download a fresh one, write it to temp and GCP
     for filename in [submission_name, variant_name]:
-        if not (clinvar_file_tmp / filename).exists():
+        temp_gcp_file = clinvar_file_tmp / filename
+        if not temp_gcp_file.exists():
             # download with wget, write to stdout, use tee to write that to GCP temp, and a local file. Nice.
             job.command(
-                f'wget -q {CLINVAR_FTP}/{filename} -O - | tee $BATCH_TMPDIR/{filename} | gcloud storage cp - {clinvar_file_tmp}/{filename}',  # noqa: E501
+                f'wget -q {CLINVAR_FTP}/{filename} -O {job[filename]}',
             )
+            batch_instance.write_output(job[filename], temp_gcp_file)
         else:
-            temp_file = batch_instance.read_input(clinvar_file_tmp / filename)
-            job.command(f'mv {temp_file} $BATCH_TMPDIR/{filename}')
+            job[filename] = batch_instance.read_input(temp_gcp_file)
     # endregion
 
     # region: make new summary
     job.command(f"""
         python3 -m clinvarbitration.scripts.resummarise_clinvar \\
-            -v $BATCH_TMPDIR/{variant_name} \\
-            -s $BATCH_TMPDIR/{submission_name} \\
+            -v {job[variant_name]} \\
+            -s {job[submission_name]} \\
             -o $BATCH_TMPDIR/clinvarbitration \\
             --all_vcf {job.clinvar_vcf}
     """)
