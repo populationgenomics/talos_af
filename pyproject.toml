@@ -58,7 +58,6 @@ include_package_data = true
 'talos_af'=  [
     'config_template.toml',
     'vcf_headers/am_header.txt',
-    'vcf_headers/clinvar_header.txt',
     'vcf_headers/revel_header.txt',
 ]
 
