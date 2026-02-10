@@ -161,12 +161,12 @@ class GenerateAlphaMissenseZip(stage.MultiCohortStage):
             python -m talos_af.scripts.process_alphamissense \\
                 --input {job.output['raw.zip']} \\
                 --regions {bed_local} \\
-                --output filtered_revel.vcf.gz
+                --output filtered_am.vcf.gz
             """)
 
         # and encode that result as an Echtvar resource
         job.command(f"""
-            echtvar encode {job.output['echtvar.zip']} /talos_af/echtvar/am_config.json filtered_revel.vcf.gz
+            echtvar encode {job.output['echtvar.zip']} /talos_af/echtvar/am_config.json filtered_am.vcf.gz
         """)
 
         batch_instance.write_output(job.output, str(outputs['raw']).removesuffix('.raw.zip'))
