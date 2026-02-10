@@ -63,7 +63,7 @@ class ParseAcmgSpec(stage.MultiCohortStage):
             --input {specification_input} \\
             --mane {mane_input} \\
             --json_out {job.json_out} \\
-            --bed_out {job.bed_out} \\
+            --bed_out {job.bed_out}
         """)
 
         batch_instance.write_output(job.json_out, outputs['json'])

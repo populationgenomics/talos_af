@@ -47,12 +47,14 @@ def run_clinvarbitration_in_full(clinvar_file_tmp: Path, final_output: Path) -> 
             -v {job[variant_name]} \\
             -s {job[submission_name]} \\
             -o $BATCH_TMPDIR/clinvarbitration \\
-            --all_vcf {job.clinvar_vcf}
+            --all_vcf $BATCH_TMPDIR/clinvarbitration.vcf.bgz
     """)
     # endregion
 
     # region: encode as an echtvar zip
-    job.command(f'echtvar encode {job.zip} /talos_af/echtvar/clinvar_config.json {job.clinvar_vcf}')
+    job.command(
+        f'echtvar encode {job.zip} /talos_af/echtvar/clinvar_config.json $BATCH_TMPDIR/clinvarbitration.vcf.bgz'
+    )
     batch_instance.write_output(job.zip, final_output)
     # endregion
 
