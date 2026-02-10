@@ -8,7 +8,7 @@ description='Talos-like application for applying ACMG Actionable Findings detect
 readme = "README.md"
 # currently cpg-flow is pinned to this version
 requires-python = ">=3.10,<3.12"
-version="0.0.5"
+version="0.0.6"
 license={ "file" = "LICENSE" }
 classifiers=[
     'Environment :: Console',
@@ -58,7 +58,6 @@ include_package_data = true
 'talos_af'=  [
     'config_template.toml',
     'vcf_headers/am_header.txt',
-    'vcf_headers/clinvar_header.txt',
     'vcf_headers/revel_header.txt',
 ]
 
@@ -98,7 +97,7 @@ section-order = ["future", "standard-library", "third-party", "cpg", "first-part
 cpg = ["metamist", "cpg_flow", "cpg_utils"]
 
 [tool.bumpversion]
-current_version = "0.0.4"
+current_version = "0.0.6"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 commit = true
