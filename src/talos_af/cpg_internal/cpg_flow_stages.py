@@ -313,8 +313,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job.command(
             f"""
             nextflow \
-                -c nextflow/talos_af.config \\
-                run nextflow/talos_af.nf \\
+                -c nextflow.config \\
+                run main.nf \\
                 --config nextflow/inputs/config.toml \\
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
