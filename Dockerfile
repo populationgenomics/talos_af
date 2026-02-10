@@ -71,7 +71,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
 # Add in the additional requirements that are most likely to change.
-COPY LICENSE pyproject.toml uv.lock README.md ./
+COPY LICENSE pyproject.toml uv.lock README.md main.nf nextflow.config ./
 COPY src src/
 COPY echtvar echtvar/
 RUN --mount=type=cache,target=/root/.cache/uv \
