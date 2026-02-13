@@ -276,13 +276,10 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job = batch_instance.new_bash_job(f'Run NF workflow in full for {dataset.name}')
         job.image(config.config_retrieve(['workflow', 'driver_image']))
 
-        # set some output expectations
+        # set some output expectations - this could be extensible based on config
+        extensions = ['results.json', 'filtered.vcf.bgz', 'filtered.vcf.bgz.tbi']
         job.declare_resource_group(
-            output={
-                f'{dataset.name}_results.json': f'{{root}}/{dataset.name}_results.json',
-                f'{dataset.name}_filtered.vcf.bgz': f'{{root}}/{dataset.name}_filtered.vcf.bgz',
-                f'{dataset.name}_filtered.vcf.bgz.tbi': f'{{root}}/{dataset.name}_filtered.vcf.bgz.tbi',
-            },
+            output={f'{dataset.name}_{ext}': f'{{root}}/{dataset.name}_{ext}' for ext in extensions},
         )
 
         # read in various input files
