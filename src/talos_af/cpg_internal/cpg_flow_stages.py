@@ -3,6 +3,8 @@ import functools
 from argparse import ArgumentParser
 from os.path import join
 
+import toml
+
 from cpg_flow import stage, targets, workflow
 from cpg_flow.stage import StageInput, StageOutput
 from cpg_flow.targets import MultiCohort
@@ -266,8 +268,6 @@ class RunTalosAfNextFlow(stage.DatasetStage):
             'pedigree': output_folder / f'{dataset.name}.pedigree',
         }
 
-        return {}
-
     def queue_jobs(self, dataset: targets.Dataset, inputs: stage.StageInput) -> stage.StageOutput:
         outputs = self.expected_outputs(dataset)
 
@@ -276,13 +276,10 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job = batch_instance.new_bash_job(f'Run NF workflow in full for {dataset.name}')
         job.image(config.config_retrieve(['workflow', 'driver_image']))
 
-        # set some output expectations
+        # set some output expectations - this could be extensible based on config
+        extensions = ['results.json', 'filtered.vcf.bgz', 'filtered.vcf.bgz.tbi']
         job.declare_resource_group(
-            output={
-                f'{dataset.name}_results.json': f'{{root}}/{dataset.name}_results.json',
-                f'{dataset.name}_filtered.vcf.bgz': f'{{root}}/{dataset.name}_filtered.vcf.bgz',
-                f'{dataset.name}_filtered.vcf.bgz.tbi': f'{{root}}/{dataset.name}_filtered.vcf.bgz.tbi',
-            },
+            output={f'{dataset.name}_{ext}': f'{{root}}/{dataset.name}_{ext}' for ext in extensions},
         )
 
         # read in various input files
@@ -309,13 +306,21 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         # create the expected path to CRAM files for this dataset
         cram_dir = dataset.prefix() / 'cram'
 
+        # create a temp toml filepath, used to provide custom configurations
+        tmp_conf_path = dataset.tmp_prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name / 'conf.toml'
+        with tmp_conf_path.open('w') as handle:
+            conf_block = config.config_retrieve('talos_af_freqs')
+            handle.write(toml.dumps(conf_block))
+
+        local_conf = batch_instance.read_input(tmp_conf_path)
+
         # nextflow go brrrr
         job.command(
             f"""
             nextflow \
                 -c nextflow.config \\
                 run main.nf \\
-                --config nextflow/inputs/config.toml \\
+                --config {local_conf} \\
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
