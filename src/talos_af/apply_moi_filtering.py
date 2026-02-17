@@ -57,7 +57,7 @@ def main(
     for gene_id, variants in gene_dict.items():
         # pre-filter all variants if the type is specific
         if acmg_spec[gene_id]['reportable'] == 'specific':
-            variants = [
+            eligible_variants = [
                 var
                 for var in variants
                 if utils_af.apply_gene_specific_rules(
@@ -65,9 +65,11 @@ def main(
                     variant=var,
                 )
             ]
-        comp_het_dict = utils_af.find_comp_hets(variants, pedigree)
+        else:
+            eligible_variants = variants
+        comp_het_dict = utils_af.find_comp_hets(eligible_variants, pedigree)
         moi_to_use = acmg_spec[gene_id]['moi']
-        for variant in variants:
+        for variant in eligible_variants:
             if results := moi_filter_dict[moi_to_use].run(variant, comp_het_dict, pedigree):
                 selected_variants[variant.coordinates.string_format] = variant
                 for sample, instances in results.items():
