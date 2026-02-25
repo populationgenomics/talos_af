@@ -1,8 +1,6 @@
 process GenerateHtmlReport {
     container params.container
 
-    publishDir params.output_dir, mode: 'copy'
-
     input:
         path results
         path config

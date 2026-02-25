@@ -10,8 +10,6 @@ process FilterVcfToBed {
         path bed_file
         path ref_genome
 
-    publishDir params.output_dir, mode: 'copy'
-
     output:
         tuple \
             path("${params.cohort}_filtered.vcf.bgz"), \

@@ -8,9 +8,6 @@ process AnnotateWithEchtvar {
         path am_zip
         path clinvar_zip
 
-    // annotate VCF with gnomAD, REVEL, and AlphaMissense data
-    publishDir params.output_dir
-
     output:
         path "${params.cohort}_echtvar.vcf.bgz"
 
