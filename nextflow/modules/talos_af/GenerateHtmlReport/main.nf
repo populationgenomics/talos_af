@@ -6,7 +6,7 @@ process GenerateHtmlReport {
         path config
 
     output:
-        path "${params.cohort}_results.html"
+        path "${params.cohort}_results.html", emit: report
 
     script:
 

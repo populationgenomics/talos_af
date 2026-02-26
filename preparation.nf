@@ -9,11 +9,13 @@ include { ParseRevel } from './nextflow/modules/prep/ParseRevel/main'
 include { PrepareAcmgSpec } from './nextflow/modules/prep/PrepareAcmgSpec/main'
 
 // download and prepare ClinVar data
-include { DownloadClinVarFiles } from './nextflow/modules/DownloadClinVarFiles/main'
-include { EncodeClinvar } from './nextflow/modules/EncodeClinvar/main'
-include { ResummariseClinVar } from './nextflow/modules/ResummariseClinVar/main'
+include { DownloadClinVarFiles } from './nextflow/modules/prep/DownloadClinVarFiles/main'
+include { EncodeClinvar } from './nextflow/modules/prep/EncodeClinvar/main'
+include { ResummariseClinVar } from './nextflow/modules/prep/ResummariseClinVar/main'
 
 def timestamp = new java.util.Date().format('yyyy-MM')
+String subfile = "${params.large_files}/submissions_${timestamp}.txt.gz"
+String varfile = "${params.large_files}/variants_${timestamp}.txt.gz"
 
 workflow {
     main:
@@ -49,6 +51,7 @@ workflow {
 	)
 	EncodeClinvar(
 		ResummariseClinVar.out.vcf,
+		timestamp,
 	)
 
 	ch_revel_input = Channel.fromPath(params.revel_input, checkIfExists: true)
@@ -61,6 +64,8 @@ workflow {
     // use workflow outputs, not individual copies
     publish:
     	alphamissense = EncodeAlphaMissense.out
+    	acmg_bed = PrepareAcmgSpec.out.bed
+    	acmg_json = PrepareAcmgSpec.out.json
     	clinvar = EncodeClinvar.out
     	clinvar_sub = ch_clinvar_sub
     	clinvar_var = ch_clinvar_var
@@ -69,6 +74,10 @@ workflow {
 
 output {
     alphamissense {
+    }
+    acmg_bed {
+    }
+    acmg_json {
     }
     clinvar {
     }
