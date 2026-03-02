@@ -22,26 +22,39 @@ here do not need to have annotation by other sources.
     ```bash
      docker build -t talos_af:0.0.9 .
     ```
-2. download all the input resources (used for annotation)
+   
+2. Download large input resources (used for annotation)
     ```bash
     cd large_files
     bash download_inputs.sh
     cd ..
     ```
+   
 3. [install NextFlow](https://www.nextflow.io/docs/latest/install.html)
-4. run it!
+
+4. Run the preparation workflow
+    ```bash
+    nextflow \
+    -c nextflow.config \
+        run preparation.nf \
+        --acmg_spec nextflow/inputs/acmg_secondary.tsv
+    ```
+
+5. Run TalosAF!
     ```bash
     nextflow \
     -c nextflow.config \
         run main.nf \
         --acmg_spec nextflow/inputs/acmg_secondary.tsv \
-        -with-report
+        --input_vcf nextflow/inputs/test_1.vcf.bgz \
+        --pedigree nextflow/inputs/pedigree.ped \
+        --output-dir <path to write outputs>
     ```
 
-A [workflow config file](nextflow/talos_af.config) has been populated with all required parameters for a test run.
+For demonstration purposes, a [workflow config file](nextflow.config) has been populated with all required parameters for a test run.
 
 By default, this will use the test data (a trio, 12 variants, corresponding pedigree) and run the full annotation and
-interpretation workflow.
+interpretation workflow. Outputs will be written to folders inside `./nextflow` in this repository.
 
 The first time this runs will be slow-ish, as the downloaded reference data is reformatted to be used as fast annotation
 inputs. Outputs will be generated inside the `nextflow` folder. Subsequent reruns will make use of this preprocessing.
