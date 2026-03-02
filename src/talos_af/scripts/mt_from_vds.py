@@ -49,7 +49,10 @@ def get_reference_intervals() -> list[hl.Interval] | None:
 def main(input_vds: str, output_mt: str):
     """Load a sparse VariantDataset, export a dense MatrixTable with split multiallelics."""
 
-    hail_batch.init_batch()
+    if qob_overrides := config.config_retrieve('qob_overrides'):
+        hail_batch.init_batch(**qob_overrides)
+    else:
+        hail_batch.init_batch()
 
     vds: VariantDataset = hl.vds.read_vds(
         input_vds,
