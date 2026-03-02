@@ -4,10 +4,21 @@ from typing import TYPE_CHECKING
 import hail as hl
 from loguru import logger
 
-from cpg_utils import hail_batch
+from cpg_utils import config, hail_batch
 
 if TYPE_CHECKING:
     from hail.vds import VariantDataset
+
+
+def get_reference_intervals() -> list[hl.Interval] | None:
+    """
+    Locates the bundled BED file and efficiently parses it into a list of Hail Intervals.
+    """
+    if interval_path := config.config_retrieve(['references', 'vds_read_intervals'], None):
+        logger.info(f'Reading intervals from {interval_path}')
+        interval_table = hl.import_bed(interval_path, force_bgz=True)
+        return interval_table.interval.collect()
+    return None
 
 
 def main(input_vds: str, output_mt: str):
@@ -15,7 +26,9 @@ def main(input_vds: str, output_mt: str):
 
     hail_batch.init_batch()
 
-    vds: VariantDataset = hl.vds.read_vds(input_vds)
+    intervals_for_reading = get_reference_intervals()
+
+    vds: VariantDataset = hl.vds.read_vds(input_vds, intervals=intervals_for_reading)
 
     logger.info('Densifying data...')
     mt: hl.MatrixTable = hl.vds.to_dense_mt(vds)
