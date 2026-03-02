@@ -20,7 +20,7 @@ here do not need to have annotation by other sources.
 
 1. Build a docker image
     ```bash
-     docker build -t talos_af:0.0.8 .
+     docker build -t talos_af:0.0.9 .
     ```
 2. download all the input resources (used for annotation)
     ```bash
