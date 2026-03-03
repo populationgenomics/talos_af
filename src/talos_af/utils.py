@@ -480,7 +480,10 @@ def is_variant_exact_p(change: str, variant: models.VariantAf) -> bool:
     alt = match.group('alt')
     samtools_format_string = f'{codon}{ref}>{codon}{alt}'
 
-    return any(each_txc['amino_acid_change'] == samtools_format_string for each_txc in variant.transcript_consequences)
+    return any(
+        each_txc.get('amino_acid_change', 'NOTAMATCH') == samtools_format_string
+        for each_txc in variant.transcript_consequences
+    )
 
 
 def apply_gene_specific_rules(
