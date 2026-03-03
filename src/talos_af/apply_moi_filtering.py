@@ -56,7 +56,7 @@ def main(
 
     for gene_id, variants in gene_dict.items():
         # pre-filter all variants if the type is specific
-        if acmg_spec[gene_id]['reportable'] == 'specific':
+        if acmg_spec[gene_id]['reportable'] != 'all':
             eligible_variants = [
                 var
                 for var in variants

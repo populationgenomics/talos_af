@@ -59,7 +59,10 @@ def main(
         bed (str): Region BED file
     """
 
-    hail_batch.init_batch()
+    if qob_overrides := config.config_retrieve('qob_overrides'):
+        hail_batch.init_batch(**qob_overrides)
+    else:
+        hail_batch.init_batch()
 
     # read the dense MT and obtain the sites-only HT
     mt = hl.read_matrix_table(mt_path)

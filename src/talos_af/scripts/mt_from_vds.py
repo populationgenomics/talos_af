@@ -49,7 +49,10 @@ def get_reference_intervals() -> list[hl.Interval] | None:
 def main(input_vds: str, output_mt: str):
     """Load a sparse VariantDataset, export a dense MatrixTable with split multiallelics."""
 
-    hail_batch.init_batch()
+    if qob_overrides := config.config_retrieve('qob_overrides'):
+        hail_batch.init_batch(**qob_overrides)
+    else:
+        hail_batch.init_batch()
 
     vds: VariantDataset = hl.vds.read_vds(
         input_vds,
@@ -59,13 +62,38 @@ def main(input_vds: str, output_mt: str):
     logger.info('Densifying data...')
     mt: hl.MatrixTable = hl.vds.to_dense_mt(vds)
 
-    # taken from _filter_rows_and_add_tags in large_cohort/site_only_vcf.py
-    # remove any monoallelic or non-ref-in-any-sample sites
+    # remove gvcf_info if present
+    if 'gvcf_info' in mt.row_value:
+        mt = mt.drop('gvcf_info')
+
+    logger.info('Post densification schema')
+    mt.describe(handler=logger.info)
+
+    # remove any monoallelic or non-alt-in-any-sample sites
     mt = mt.filter_rows((hl.len(mt.alleles) > 1) & (hl.agg.any(mt.LGT.is_non_ref())))
 
-    mt = hl.experimental.sparse_split_multi(mt)
+    # annotate with densified representations
+    mt = mt.annotate_entries(
+        GT=hl.vds.lgt_to_gt(mt.LGT, mt.LA),
+        AD=hl.vds.local_to_global(
+            mt.LAD,
+            mt.LA,
+            n_alleles=hl.len(mt.alleles),
+            fill_value=0,
+            number='R',
+        ),
+    )
+
+    logger.info('Post Local-to-global reannotation schema')
+    mt.describe(handler=logger.info)
 
     mt = mt.select_entries('GT', 'GQ', 'DP', 'AD')
+
+    # split out multiallelic rows
+    mt = hl.split_multi_hts(mt)
+
+    logger.info('Post variant splitting schema')
+    mt.describe(handler=logger.info)
 
     mt.write(output_mt, overwrite=True)
 
