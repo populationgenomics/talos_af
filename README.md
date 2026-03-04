@@ -22,14 +22,14 @@ here do not need to have annotation by other sources.
     ```bash
      docker build -t talos_af:0.0.11 .
     ```
-   
+
 2. Download large input resources (used for annotation)
     ```bash
     cd large_files
     bash download_inputs.sh
     cd ..
     ```
-   
+
 3. [install NextFlow](https://www.nextflow.io/docs/latest/install.html)
 
 4. Run the preparation workflow
