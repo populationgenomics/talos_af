@@ -303,8 +303,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
 
         pedigree = batch_instance.read_input(dataset.write_ped_file(out_path=outputs['pedigree']))
 
-        # create the expected path to CRAM files for this dataset
-        cram_dir = dataset.prefix() / 'cram'
+        # create the expected path to CRAM files for this dataset - from config or as a default
+        cram_dir = config.config_retrieve(['workflow', 'cram_dir', dataset.name], str(dataset.prefix() / 'cram'))
 
         # create a temp toml filepath, used to provide custom configurations
         tmp_conf_path = dataset.tmp_prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name / 'conf.toml'
