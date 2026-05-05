@@ -1,8 +1,6 @@
 process ApplyMoiFiltering {
     container params.container
 
-    publishDir params.output_dir, mode: 'copy'
-
     input:
         tuple path(vcf), path(vcf_tbi)
         path pedigree

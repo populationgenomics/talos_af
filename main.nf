@@ -2,30 +2,35 @@
 
 nextflow.enable.dsl=2
 
-include { AnnotateCsq } from './nextflow/modules/AnnotateCsq/main'
-include { AnnotateWithEchtvar } from './nextflow/modules/AnnotateWithEchtvar/main'
-include { ApplyMoiFiltering } from './nextflow/modules/ApplyMoiFiltering/main'
-include { EncodeAlphaMissense } from './nextflow/modules/EncodeAlphaMissense/main'
-include { EncodeRevel } from './nextflow/modules/EncodeRevel/main'
-include { FilterVcfToBed } from './nextflow/modules/FilterVcfToBed/main'
-include { GenerateHtmlReport } from './nextflow/modules/GenerateHtmlReport/main'
-include { ParseAlphaMissense } from './nextflow/modules/ParseAlphaMissense/main'
-include { ParseRevel } from './nextflow/modules/ParseRevel/main'
-include { PrepareAcmgSpec } from './nextflow/modules/PrepareAcmgSpec/main'
+include { AnnotateCsq } from './nextflow/modules/talos_af/AnnotateCsq/main'
+include { AnnotateWithEchtvar } from './nextflow/modules/talos_af/AnnotateWithEchtvar/main'
+include { ApplyMoiFiltering } from './nextflow/modules/talos_af/ApplyMoiFiltering/main'
+include { FilterVcfToBed } from './nextflow/modules/talos_af/FilterVcfToBed/main'
+include { GenerateHtmlReport } from './nextflow/modules/talos_af/GenerateHtmlReport/main'
 
-// download and prepare ClinVar data
-include { DownloadClinVarFiles } from './nextflow/modules/DownloadClinVarFiles/main'
-include { EncodeClinvar } from './nextflow/modules/EncodeClinvar/main'
-include { ResummariseClinVar } from './nextflow/modules/ResummariseClinVar/main'
+def timestamp = new java.util.Date().format('yyyy-MM')
 
 workflow {
     main:
 
-    def timestamp = new java.util.Date().format('yyyy-MM')
+    if (file(workflow.outputDir).simpleName == file(params.processed_annotations).simpleName) {
+    	println "Output Directory (${workflow.outputDir}) is probably not set correctly, use config or `-output-dir`"
+		exit 1
+    }
 
-    // populate various input channels
-    ch_ref_genome = Channel.fromPath(params.ref_genome, checkIfExists: true)
-	ch_acmg_spec = Channel.fromPath(params.acmg_spec, checkIfExists: true)
+    println "${workflow.outputDir}"
+    println "${params.processed_annotations}"
+
+    if (file(params.acmg_bed).exists()) {
+        ch_acmg_bed = Channel.fromPath(params.acmg_bed, checkIfExists: true)
+		ch_acmg_json = Channel.fromPath(params.acmg_json, checkIfExists: true)
+    }
+    else {
+    	println "ACMG artifacts (BED, JSON) don't exist, please run the Prep workflow (preparation.nf)"
+		exit 1
+    }
+
+	ch_ref_genome = Channel.fromPath(params.ref_genome, checkIfExists: true)
 	ch_mane_input = Channel.fromPath(params.mane_input, checkIfExists: true)
 	ch_gff3 = Channel.fromPath(params.gff_input, checkIfExists: true)
 
@@ -40,76 +45,25 @@ workflow {
     // optional path to a previous set of results
     ch_previous_results = Channel.fromPath(params.previous_results, checkIfExists: true)
 
-    PrepareAcmgSpec(
-        ch_acmg_spec,
-        ch_mane_input,
-    )
-
-    // generate the AlphaMissense zip if it doesn't already exist
-    if (file(params.alphamissense_echtvar).exists()) {
-        ch_alphamissense_echtvar = Channel.fromPath(params.alphamissense_echtvar)
-    }
-    else {
-    	ch_alphamissense_input = Channel.fromPath(params.alphamissense_input, checkIfExists: true)
-        ParseAlphaMissense(
-            ch_alphamissense_input,
-            PrepareAcmgSpec.out.bed,
-        )
-        EncodeAlphaMissense(ParseAlphaMissense.out)
-        ch_alphamissense_echtvar = EncodeAlphaMissense.out
-    }
-
-    // generate the Clinvar zip if it doesn't already exist
+	ch_alphamissense_echtvar = Channel.fromPath(params.alphamissense_echtvar)
 
     // does this month's clinvarbitration data exist?
     String current_clinvarbitration = "${params.processed_annotations}/clinvarbitration_${timestamp}.zip"
 
-    if (file(params.clinvar_echtvar).exists()) {
-        ch_clinvar_echtvar = Channel.fromPath(params.clinvar_echtvar)
+    if (file(current_clinvarbitration).exists()) {
+        ch_clinvar_echtvar = Channel.fromPath(current_clinvarbitration)
     }
     else {
-    // new workflow elements to go and create it from raw data
-        String subfile = "${params.large_files}/submissions_${timestamp}.txt.gz"
-        String varfile = "${params.large_files}/variants_${timestamp}.txt.gz"
-
-        if (file(subfile).exists() && file(varfile).exists()) {
-            ch_clinvar_sub = Channel.fromPath(subfile)
-            ch_clinvar_var = Channel.fromPath(varfile)
-        } else {
-            DownloadClinVarFiles(timestamp)
-            ch_clinvar_sub = DownloadClinVarFiles.out.submissions
-            ch_clinvar_var = DownloadClinVarFiles.out.variants
-        }
-
-        ResummariseClinVar(
-            ch_clinvar_var,
-            ch_clinvar_sub,
-            timestamp,
-        )
-        EncodeClinvar(
-            ResummariseClinVar.out.vcf,
-        )
-        ch_clinvar_echtvar = EncodeClinvar.out
+    	println "ClinvArbitration data for the month is not available, please run the Prep workflow (preparation.nf)"
+		exit 1
     }
 
-    // generate the REVEL zip if it doesn't already exist
-    if (file(params.revel_echtvar).exists()) {
-        ch_revel_echtvar = Channel.fromPath(params.revel_echtvar)
-    }
-    else {
-    	ch_revel_input = Channel.fromPath(params.revel_input, checkIfExists: true)
-        ParseRevel(
-            ch_revel_input,
-            PrepareAcmgSpec.out.bed,
-        )
-        EncodeRevel(ParseRevel.out)
-        ch_revel_echtvar = EncodeRevel.out
-    }
+	ch_revel_echtvar = Channel.fromPath(params.revel_echtvar)
 
     FilterVcfToBed(
         ch_input_vcf,
         ch_input_vcf_index,
-        PrepareAcmgSpec.out.bed,
+        ch_acmg_bed,
         ch_ref_genome,
     )
 
@@ -132,7 +86,7 @@ workflow {
     ApplyMoiFiltering(
         AnnotateCsq.out,
         ch_pedigree,
-        PrepareAcmgSpec.out.json,
+        ch_acmg_json,
         ch_config,
         ch_previous_results,
     )
@@ -141,4 +95,15 @@ workflow {
         ApplyMoiFiltering.out,
         ch_config,
     )
+
+    publish:
+    	vcf = AnnotateCsq.out
+    	report = GenerateHtmlReport.out.report
+}
+
+output {
+    vcf {
+    }
+    report {
+    }
 }

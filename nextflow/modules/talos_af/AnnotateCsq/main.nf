@@ -6,8 +6,6 @@ process AnnotateCsq {
         path gff3
         path reference
 
-    publishDir params.output_dir, mode: 'copy'
-
     output:
         tuple \
             path("${params.cohort}_csq.vcf.bgz"), \

@@ -1,8 +1,6 @@
 process PrepareAcmgSpec {
     container params.container
 
-    publishDir params.output_dir, mode: 'copy'
-
     input:
         path spec
 		path mane
