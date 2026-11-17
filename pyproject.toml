@@ -42,7 +42,8 @@ dev = [
     'ruff',
 ]
 cpg = [
-    'cpg-flow'
+    'cpg-flow',
+    'hail==0.2.138',
 ]
 
 [tool.hatch.build.targets.wheel]
