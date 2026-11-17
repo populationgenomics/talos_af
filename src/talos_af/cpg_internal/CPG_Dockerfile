@@ -22,8 +22,7 @@ RUN apt update && apt install -y --no-install-recommends \
 
 FROM base AS bcftools_compiler
 
-ARG BCFTOOLS_VERSION=1.22
-ARG HTSLIB_VERSION=1.22.1
+ARG BCFTOOLS_VERSION=1.25
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
         gcc \
@@ -83,13 +82,10 @@ COPY src src/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install ".[cpg]"
 
-# extra dependency for this image, which will need Hail
-RUN uv pip install cpg-flow
-
 # Place executables in the environment at the front of the path
 ENV PATH="/talos_af/.venv/bin:$PATH"
 
 COPY echtvar echtvar/
 COPY nextflow nextflow/
 
-ENV VERSION=0.0.11
+ENV VERSION=0.0.12
