@@ -12,7 +12,7 @@ process ApplyMoiFiltering {
         path "${params.cohort}_results.json"
 
 	script:
-		def history_arg = previous.name != 'NO_FILE' ? "--prior_results $previous " : ''
+		def history_arg = previous.name != 'NO_FILE' ? "--prior_results $previous" : ''
 
         """
         export TALOS_AF_CONFIG=${config}
