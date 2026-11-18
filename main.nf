@@ -91,11 +91,14 @@ workflow {
 
     publish:
     	vcf = AnnotateCsq.out
+    	json = ApplyMoiFiltering.out
     	report = GenerateHtmlReport.out.report
 }
 
 output {
     vcf {
+    }
+    json {
     }
     report {
     }

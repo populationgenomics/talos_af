@@ -256,7 +256,9 @@ class ExportVcfFromMt(stage.DatasetStage):
         return self.make_outputs(dataset, output, jobs=job)
 
 
-@stage.stage(required_stages=[ParseAcmgSpec, ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip])
+@stage.stage(
+    required_stages=[ParseAcmgSpec, ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip]
+)
 class RunTalosAfNextFlow(stage.DatasetStage):
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
         output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name
@@ -264,8 +266,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         return {
             'html': web_folder / f'{dataset.name}_results.html',
             'json': output_folder / f'{dataset.name}_results.json',
-            'vcf': output_folder / f'{dataset.name}_filtered.vcf.bgz',
-            'tbi': output_folder / f'{dataset.name}_filtered.vcf.bgz.tbi',
+            'vcf': output_folder / f'{dataset.name}_csq.vcf.bgz',
+            'tbi': output_folder / f'{dataset.name}_csq.vcf.bgz.tbi',
             'pedigree': output_folder / f'{dataset.name}.pedigree',
         }
 
@@ -278,7 +280,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         job.image(config.config_retrieve(['workflow', 'driver_image']))
 
         # set some output expectations - this could be extensible based on config
-        extensions = ['results.json', 'filtered.vcf.bgz', 'filtered.vcf.bgz.tbi']
+        extensions = ['results.json', 'csq.vcf.bgz', 'csq.vcf.bgz.tbi']
         job.declare_resource_group(
             output={f'{dataset.name}_{ext}': f'{{root}}/{dataset.name}_{ext}' for ext in extensions},
         )
