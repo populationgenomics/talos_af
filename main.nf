@@ -43,12 +43,8 @@ workflow {
 
 	ch_alphamissense_echtvar = channel.fromPath(params.alphamissense_echtvar)
 
-    // does this month's clinvarbitration data exist?
-    String timestamp = new java.util.Date().format('yyyy-MM')
-    String current_clinvarbitration = "${params.processed_annotations}/clinvarbitration_${timestamp}.zip"
-
-    if (file(current_clinvarbitration).exists()) {
-        ch_clinvar_echtvar = channel.fromPath(current_clinvarbitration)
+    if (file(params.clinvar_echtvar).exists()) {
+        ch_clinvar_echtvar = channel.fromPath(params.clinvar_echtvar)
     }
     else {
     	println "ClinvArbitration data for the month is not available, please run the Prep workflow (preparation.nf)"
