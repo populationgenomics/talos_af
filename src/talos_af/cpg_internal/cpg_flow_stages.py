@@ -256,7 +256,7 @@ class ExportVcfFromMt(stage.DatasetStage):
         return self.make_outputs(dataset, output, jobs=job)
 
 
-@stage.stage(required_stages=[ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip])
+@stage.stage(required_stages=[ParseAcmgSpec, ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip])
 class RunTalosAfNextFlow(stage.DatasetStage):
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
         output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name
@@ -302,6 +302,10 @@ class RunTalosAfNextFlow(stage.DatasetStage):
             index=f'{vcf_path}.tbi',
         )['vcf']
 
+        processed_acmg = inputs.as_dict(workflow.get_multicohort(), ParseAcmgSpec)
+        local_bed = batch_instance.read_input(processed_acmg['bed'])
+        local_json = batch_instance.read_input(processed_acmg['json'])
+
         pedigree = batch_instance.read_input(dataset.write_ped_file(out_path=outputs['pedigree']))
 
         # create the expected path to CRAM files for this dataset - from config or as a default
@@ -325,6 +329,8 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --pedigree {pedigree} \\
                 --input_vcf {vcf_with_index} \\
                 --acmg_spec {acmg_spec} \\
+                --acmg_bed {local_bed} \\
+                --acmg_json {local_json} \\
                 --igv_dir {cram_dir} \\
                 --mane_input {mane} \\
                 --gnomad_echtvar {gnomad_zip} \\

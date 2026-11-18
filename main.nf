@@ -17,7 +17,6 @@ workflow {
     }
 
     println "${workflow.outputDir}"
-    println "${params.processed_annotations}"
 
     if (file(params.acmg_bed).exists()) {
         ch_acmg_bed = channel.fromPath(params.acmg_bed, checkIfExists: true)
