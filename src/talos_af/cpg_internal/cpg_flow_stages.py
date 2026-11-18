@@ -261,8 +261,8 @@ class ExportVcfFromMt(stage.DatasetStage):
 )
 class RunTalosAfNextFlow(stage.DatasetStage):
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
-        output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name
-        web_folder = dataset.web_prefix() / workflow.get_workflow().name / ACMG_VERSION / self.name
+        output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / THIS_MONTH / self.name
+        web_folder = dataset.web_prefix() / workflow.get_workflow().name / ACMG_VERSION / THIS_MONTH / self.name
         return {
             'html': web_folder / f'{dataset.name}_results.html',
             'json': output_folder / f'{dataset.name}_results.json',
