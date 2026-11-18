@@ -225,6 +225,7 @@ class ExportVcfFromMt(stage.DatasetStage):
             'vcf': dataset.prefix()
             / workflow.get_workflow().name
             / ACMG_VERSION
+            / THIS_MONTH
             / self.name
             / 'region_filtered.vcf.bgz'
         }
