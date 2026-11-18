@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.11-trixie-slim AS base
+FROM australia-southeast1-docker.pkg.dev/cpg-common/images/cpg_hail_gcloud:0.2.138.cpg2-2 as base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -55,12 +55,6 @@ RUN chmod +x /bin/echtvar
 
 FROM base_bcftools_echtvar AS talos_af
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
-
-# Copy from the cache instead of linking since it's a mounted volume
-ENV UV_LINK_MODE=copy
-
 # install nextflow
 RUN wget get.nextflow.io -O nextflow && \
 	chmod +x nextflow && \
@@ -69,21 +63,11 @@ RUN wget get.nextflow.io -O nextflow && \
 
 WORKDIR /talos_af
 
-# Install the project's dependencies using the lockfile and settings
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
-
 # Add in the additional requirements that are most likely to change.
 COPY LICENSE pyproject.toml uv.lock README.md main.nf nextflow.config ./
 COPY src src/
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install ".[cpg]"
-
-# Place executables in the environment at the front of the path
-ENV PATH="/talos_af/.venv/bin:$PATH"
+RUN pip install ".[cpg]"
 
 COPY echtvar echtvar/
 COPY nextflow nextflow/
