@@ -333,7 +333,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --alphamissense_echtvar {am_zip} \\
                 --cohort {dataset.name} \\
                 --ref_genome {ref_fa} \\
-                --output_dir {job.output} \\
+                -output-dir {job.output} \\
                 --gff_input {gff3_localised} \\
                 -without-docker
             """,

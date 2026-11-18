@@ -20,7 +20,7 @@ here do not need to have annotation by other sources.
 
 1. Build a docker image
     ```bash
-     docker build -t talos_af:0.0.14 .
+     docker build -t talos_af:0.0.15 .
     ```
 
 2. Download large input resources (used for annotation)
@@ -64,9 +64,9 @@ altered through NextFlow CLI `--[argument] [value]` syntax:
 - `cohort`: a name for the collective group of samples being processed, used to label files and create output paths
 - `input_vcf`: path to an input VCF containing one or more samples
 - `pedigree`: path to a pedigree for the corresponding samples
-- `output_dir`: path to a folder where results will be written
+- `-output-dir`: path to a folder where results will be written, used by NextFlow's workflow-outputs mechanic
 - `processed_annotations`: a folder to contain all the cohort-agnostic files (reformatted annotation files)
 
-We also advise that the `output_dir` for analysis is outside this repository. The test workflow default location is
+We also advise that the `-output-dir` for analysis is outside this repository. The test workflow default location is
 within this directory, but for real-world work mixing results with the codebase can lead to complicated git resolution
 when updating the tool.
