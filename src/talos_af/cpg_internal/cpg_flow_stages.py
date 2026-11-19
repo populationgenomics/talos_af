@@ -1,5 +1,6 @@
 import datetime
 import functools
+import json
 from argparse import ArgumentParser
 from os.path import join
 
@@ -16,6 +17,7 @@ from talos_af.cpg_internal import utils as utils_internal
 ACMG_VERSION = config.config_retrieve(['acmg_resources', 'version'])
 
 THIS_MONTH = datetime.datetime.now().strftime('%y-%m')  # noqa: DTZ005
+TODAY = datetime.datetime.now().strftime('%y-%m-%d')  # noqa: DTZ005
 
 
 @functools.cache
@@ -261,14 +263,15 @@ class ExportVcfFromMt(stage.DatasetStage):
 )
 class RunTalosAfNextFlow(stage.DatasetStage):
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
-        output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / THIS_MONTH / self.name
-        web_folder = dataset.web_prefix() / workflow.get_workflow().name / ACMG_VERSION / THIS_MONTH / self.name
+        output_folder = dataset.prefix() / workflow.get_workflow().name / ACMG_VERSION / TODAY / self.name
+        web_folder = dataset.web_prefix() / workflow.get_workflow().name / ACMG_VERSION / TODAY / self.name
         return {
             'html': web_folder / f'{dataset.name}_results.html',
             'json': output_folder / f'{dataset.name}_results.json',
             'vcf': output_folder / f'{dataset.name}_csq.vcf.bgz',
             'tbi': output_folder / f'{dataset.name}_csq.vcf.bgz.tbi',
             'pedigree': output_folder / f'{dataset.name}.pedigree',
+            'id_mapping': output_folder / f'{dataset.name}_id_mapping.json',
         }
 
     def queue_jobs(self, dataset: targets.Dataset, inputs: stage.StageInput) -> stage.StageOutput:
@@ -321,6 +324,14 @@ class RunTalosAfNextFlow(stage.DatasetStage):
 
         local_conf = batch_instance.read_input(tmp_conf_path)
 
+        # get external IDs from Metamist
+        ext_id_dict = utils_internal.query_for_id_mapping(dataset.name)
+        with to_path(outputs['id_mapping']).open('w') as handle:
+            json.dump(ext_id_dict, handle, indent=4)
+
+        # read as a group so the localised file keeps a .json extension - generate_report picks a parser by suffix
+        local_ext_dict = batch_instance.read_input_group(json=str(outputs['id_mapping']))['json']
+
         # nextflow go brrrr
         job.command(
             f"""
@@ -343,6 +354,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --ref_genome {ref_fa} \\
                 -output-dir {job.output} \\
                 --gff_input {gff3_localised} \\
+                --ext_ids {local_ext_dict} \\
                 -without-docker
             """,
         )

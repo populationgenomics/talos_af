@@ -1,5 +1,6 @@
 <tr
     data-sample-name="{{sample.name|e}}"
+    data-sample-ext-id="{{sample.ext_id|e}}"
     data-variant-coords="{{variant.chrom|e}}:{{variant.pos}}"
     data-variant-chrom="{{variant.chrom}}"
     data-variant-pos="{{variant.pos}}"
@@ -20,6 +21,9 @@
             </a>
         {% else %}
             {{sample.name|e}}
+        {% endif %}
+        {% if sample.ext_id != sample.name %}
+            ({{sample.ext_id|e}})
         {% endif %}
     </td>
     <td>

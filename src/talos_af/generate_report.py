@@ -148,6 +148,7 @@ class HTMLBuilder:
                     name=sample,
                     variants=sample_variants,
                     igv_dir=igv_dir,
+                    ext_id=self.ext_id_map.get(sample),
                 ),
             )
         self.samples.sort(key=lambda x: x.name)
@@ -244,9 +245,11 @@ class Sample:
         name: str,
         variants: list['Variant'],
         igv_dir: str | None = None,
+        ext_id: str | None = None,
     ):
         self.name = name
-        self.ext_id = 'EXTERNAL'
+        # fall back to the sample ID if no external ID was mapped
+        self.ext_id = ext_id or name
         self.variants = variants
         self.igv_dir = igv_dir
 
