@@ -20,6 +20,41 @@ METAMIST_ANALYSIS_QUERY = graphql.gql(
 """,
 )
 
+# query for all SG IDs and their relevant sample's participant-external IDs
+METAMIST_EXT_IDS = graphql.gql(
+    """
+    query MyQuery($dataset: String!) {
+        project(name: $dataset) {
+            sequencingGroups {
+                id
+                sample {
+                    participant {
+                        externalIds
+                    }
+                }
+            }
+        }
+    }
+"""
+)
+
+
+def query_for_id_mapping(query_dataset: str) -> dict[str, str]:
+    """Get the CPG ID - External IDs mapping, trim to the weguide ID."""
+    result = graphql.query(METAMIST_EXT_IDS, variables={'dataset': query_dataset})
+
+    return_map: dict[str, str] = {}
+
+    for row in result['project']['sequencingGroups']:
+        cpg_id = row['id']
+        ext_ids = row['sample']['participant']['externalIds']
+
+        weguide_id = ext_ids.get('weguide')
+        if weguide_id is not None:
+            return_map[cpg_id] = weguide_id.removeprefix('weguide_')
+
+    return return_map
+
 
 @functools.cache
 def query_for_latest_analysis(

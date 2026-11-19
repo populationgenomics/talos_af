@@ -41,6 +41,9 @@ workflow {
     // optional path to a previous set of results
     ch_previous_results = channel.fromPath(params.previous_results, checkIfExists: true)
 
+    // optional mapping of sample IDs to external IDs
+    ch_ext_ids = channel.fromPath(params.ext_ids, checkIfExists: true)
+
 	ch_alphamissense_echtvar = channel.fromPath(params.alphamissense_echtvar)
 
     if (file(params.clinvar_echtvar).exists()) {
@@ -87,6 +90,7 @@ workflow {
     GenerateHtmlReport(
         ApplyMoiFiltering.out,
         ch_config,
+        ch_ext_ids,
     )
 
     publish:
