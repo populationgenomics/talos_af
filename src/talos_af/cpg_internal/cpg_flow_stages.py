@@ -259,7 +259,9 @@ class ExportVcfFromMt(stage.DatasetStage):
 
 
 @stage.stage(
-    required_stages=[ParseAcmgSpec, ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip]
+    required_stages=[ParseAcmgSpec, ExportVcfFromMt, GenerateRevelZip, GenerateAlphaMissenseZip, GenerateClinvarZip],
+    analysis_keys=['json'],
+    analysis_type='talos_af',
 )
 class RunTalosAfNextFlow(stage.DatasetStage):
     def expected_outputs(self, dataset: targets.Dataset) -> dict[str, Path]:
@@ -332,6 +334,13 @@ class RunTalosAfNextFlow(stage.DatasetStage):
         # read as a group so the localised file keeps a .json extension - generate_report picks a parser by suffix
         local_ext_dict = batch_instance.read_input_group(json=str(outputs['id_mapping']))['json']
 
+        # if the config file contains a reference to a previous file, carry first-seen dates forward
+        # currently from config, future edition could/should be from metamist
+        previous_arg = ''
+        if prev_file := config.config_retrieve(['workflow', 'previous_af'], None):
+            prev_local = batch_instance.read_input(prev_file)
+            previous_arg = f'--previous {prev_local}'
+
         # nextflow go brrrr
         job.command(
             f"""
@@ -354,7 +363,7 @@ class RunTalosAfNextFlow(stage.DatasetStage):
                 --ref_genome {ref_fa} \\
                 -output-dir {job.output} \\
                 --gff_input {gff3_localised} \\
-                --ext_ids {local_ext_dict} \\
+                --ext_ids {local_ext_dict} {previous_arg} \\
                 -without-docker
             """,
         )
