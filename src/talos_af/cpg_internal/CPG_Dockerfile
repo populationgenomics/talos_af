@@ -72,4 +72,4 @@ RUN pip install ".[cpg]"
 COPY echtvar echtvar/
 COPY nextflow nextflow/
 
-ENV VERSION=0.0.16
+ENV VERSION=0.0.17
