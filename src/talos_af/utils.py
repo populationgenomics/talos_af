@@ -418,6 +418,17 @@ def gather_gene_dict_from_vcf(
     return dict(contig_dict)
 
 
+def variants_in_cis(var_1: models.VariantAf, var_2: models.VariantAf, sample: str) -> bool:
+    """Check whether two variants are phased on the same haplotype (same phase set and phase) in this sample."""
+    if sample not in var_1.phased or sample not in var_2.phased:
+        return False
+    return any(
+        var_1.phased[sample][phase_set] == var_2.phased[sample][phase_set]
+        for phase_set in var_1.phased[sample]
+        if phase_set in var_2.phased[sample]
+    )
+
+
 def find_comp_hets(var_list: list[models.VariantAf], pedigree: PedigreeParser) -> CompHetDict:
     """
     Find compound het pairs, variants provided in the format [var1, var2, ...]
@@ -433,6 +444,9 @@ def find_comp_hets(var_list: list[models.VariantAf], pedigree: PedigreeParser) -
     # create an empty dictionary
     comp_het_results: CompHetDict = defaultdict(dict)
 
+    # samples in the VCF but absent from the pedigree (e.g. inactive sequencing groups) are skipped
+    missing_samples: set[str] = set()
+
     # use combinations_with_replacement to find all gene pairs
     for var_1, var_2 in combinations_with_replacement(var_list, 2):
         if (var_1.coordinates == var_2.coordinates) or var_1.coordinates.chrom in NON_HOM_CHROM:
@@ -440,21 +454,23 @@ def find_comp_hets(var_list: list[models.VariantAf], pedigree: PedigreeParser) -
 
         # iterate over any samples with a het overlap
         for sample in var_1.het_samples.intersection(var_2.het_samples):
-            phased = False
+            if sample not in pedigree.participants:
+                missing_samples.add(sample)
+                continue
 
             # don't assess male compound hets on sex chromosomes
             if pedigree.participants[sample].sex == 1 and var_1.coordinates.chrom in X_CHROMOSOME:
                 continue
 
-            # check for both variants being in the same phase set
-            if sample in var_1.phased and sample in var_2.phased:
-                # check for presence of the same phase set
-                for phase_set in [ps for ps in var_1.phased[sample] if ps in var_2.phased[sample]]:
-                    if var_1.phased[sample][phase_set] == var_2.phased[sample][phase_set]:
-                        phased = True
-            if not phased:
+            if not variants_in_cis(var_1, var_2, sample):
                 comp_het_results[sample].setdefault(var_1.coordinates.string_format, []).append(var_2)
                 comp_het_results[sample].setdefault(var_2.coordinates.string_format, []).append(var_1)
+
+    if missing_samples:
+        logger.warning(
+            f'Skipped compound-het assessment for {len(missing_samples)} sample(s) absent from the pedigree: '
+            f'{", ".join(sorted(missing_samples))}',
+        )
 
     return comp_het_results
 

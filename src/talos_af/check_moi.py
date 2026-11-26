@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import ClassVar
 
+from loguru import logger
 from mendelbrot.pedigree_parser import PedigreeParser
 
 from talos_af import config, models
@@ -267,7 +268,15 @@ class XL(BaseMoi):
             return classifications
 
         # shorthand for a union we use a couple of times below
+        # samples in the VCF but absent from the pedigree (e.g. inactive sequencing groups) are skipped
         all_sample_ids = principal.hom_samples | principal.het_samples
+        if missing_samples := {sam_id for sam_id in all_sample_ids if sam_id not in pedigree.participants}:
+            logger.warning(
+                f'{principal.coordinates.string_format}: skipping {len(missing_samples)} sample(s) absent from the '
+                f'pedigree: {", ".join(sorted(missing_samples))}',
+            )
+            all_sample_ids -= missing_samples
+
         males = {sam_id for sam_id in all_sample_ids if pedigree.participants[sam_id].sex == 1}
 
         # first assess males
